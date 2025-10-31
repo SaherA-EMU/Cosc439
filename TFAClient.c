@@ -6,7 +6,6 @@
 
 typedef struct {
     enum { registerTFA, ackRegTFA, ackPushTFA, requestAuth} messageType;
-
     unsigned int userID;
     unsigned long timestamp;
     unsigned long digitalSig;
@@ -16,13 +15,13 @@ int main() {
     printf("TFAClient module loaded.\n");
     printf("Please enter your User ID: ");
     unsigned int userID;
-    scanf("%u", userID);
+    scanf("%u", &userID);
     printf("Please enter your IP Address: ");
     char IPAddress[16];
     scanf("%15s", IPAddress);
     printf("Please enter your Port Number: ");
     unsigned int portNumber;
-    scanf("%u", portNumber);
+    scanf("%u", &portNumber);
     printf("User ID: %u, IP Address: %s, Port Number: %u\n", userID, IPAddress, portNumber);
     
     int sock = socket(AF_INET, SOCK_STREAM, 0);
