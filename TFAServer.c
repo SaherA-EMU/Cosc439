@@ -49,7 +49,6 @@ int main(int argc, char *argv[]) {
         exit(1);
     }
     printf("Client connected: %s\n", inet_ntoa(clientAddr.sin_addr));
-    accept();
 
     int bytesReceived = recv(clientSock, buffer, BUFFSIZE - 1, 0);
     if (bytesReceived < 0) {
