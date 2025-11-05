@@ -39,4 +39,40 @@ int main() {
 
     printf("serverAddr configured.\n");
     
+    if (connect(sock, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
+        perror("Connect() failed");
+        close(sock);
+        return 1;
+    }
+    printf("Connected to server successfully.\n");
+
+    TFAClientOrLodiServerToTFAServer regMessage;
+    regMessage.messageType = registerTFA;
+    regMessage.userID = userID;
+    regMessage.timestamp =  123456789; // Example timestamp
+    regMessage.digitalSig = 987654321; // Example digital signature
+
+    if(send(sock, &regMessage, sizeof(regMessage), 0) != sizeof(regMessage)) {
+        perror("Send() failed");
+        close(sock);
+        return 1;
+    }
+
+    printf("Registration message sent to server.\n");
+
+    TFAClientOrLodiServerToTFAServer responseMessage;
+    if(recv(sock, &responseMessage, sizeof(responseMessage), 0) <= 0) {
+        perror("Recv() failed");
+        close(sock);
+        return 1;
+    }
+
+    printf("Response received from server.\n");
+    printf("Message Type: %d\n", responseMessage.messageType);
+    printf("User ID: %u\n", responseMessage.userID);
+    printf("Timestamp: %lu\n", responseMessage.timestamp);
+    printf("Digital Signature: %lu\n", responseMessage.digitalSig);
+
+    close(sock);
+    return 0;
 }
