@@ -40,7 +40,7 @@ int main(int argc, char *argv[]) {
         perror("Socket() failed");
         exit(1);
     }
-    printf("[TFA Server] Socket created successfully.\n");
+    printf("[TFA Server]: Socket created successfully.\n");
 // Configure server address structure
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;                /* IPv4*/
@@ -51,20 +51,41 @@ int main(int argc, char *argv[]) {
         perror("Bind() failed");
         exit(1);
     }
-    printf("[TFA Server] Bind completed successfully.\n");
-    printf("[TFA Server] Listening on port %u...\n", serverPort);
+    printf("[TFA Server]: Bind completed successfully.\n");
+    printf("[TFA Server]: Listening on port %u...\n", serverPort);
     while(1) {
-    TFAClientOrLodiServerToTFAServer recvMessage;
-    ssize_t recvLength = recvfrom(serverSock, &recvMessage, sizeof(recvMessage), 0,
-                                  (struct sockaddr *) &clientAddr, &clientLen);
-    if (recvLength < 0) {
-        perror("Recvfrom() failed");
-        close(serverSock);
-        exit(1);
+        TFAClientOrLodiServerToTFAServer recvMessage;
+        ssize_t recvLength = recvfrom(serverSock, &recvMessage, sizeof(recvMessage), 0,
+                                    (struct sockaddr *) &clientAddr, &clientLen);
+        if (recvLength < 0) {
+            perror("Recvfrom() failed");
+            close(serverSock);
+            exit(1);
+        }
+        printf("\n[TFA Server]: Received message from %s:%u\n",inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+        printf("[TFA Server]: messageType=%d userID=%u timestamp=%lu digitalSig=%lu \n", recvMessage.messageType, recvMessage.userID, recvMessage.timestamp, recvMessage.digitalSig);
+        if(recvMessage.messageType == registerTFA){
+            // Send confirmation back to client
+            TFAServerToClient confirmMessage;
+            confirmMessage.messageType = confirmTFA;
+            confirmMessage.userID = recvMessage.userID;
+
+            sendto(serverSock, &confirmMessage, sizeof(confirmMessage), 0,(struct sockaddr*) &clientAddr, clientLen);
+            printf("[TFA Server]: Sent confirmTFA to user %u\n", recvMessage.userID);
+            // Wait for acknowledgment from client
+            TFAClientOrLodiServerToTFAServer ackMessage;
+            ssize_t ackLength = recvfrom(serverSock, &ackMessage, sizeof(ackMessage), 0,
+                                        (struct sockaddr *) &clientAddr, &clientLen);
+            if( ackLength > 0 && ackMessage.messageType == ackRegTFA) {
+                printf("[TFA Server]: Received ackRegTFA from user %u\n", ackMessage.userID);
+                printf("[TFA Server]: Registration process completed for user %u\n", ackMessage.userID);:
+            } else {
+                printf("[TFA Server]: Failed to receive ackRegTFA from user %u\n", recvMessage.userID);
+            }
+        }
+    
     }
-    printf("\n[TFA Server] Received message from %s:%u\n",inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
-    printf("[TFA Server] messageType=%d userID=%u timestamp=%lu digitalSig=%lu \n", recvMessage.messageType, recvMessage.userID, recvMessage.timestamp, recvMessage.digitalSig);
-// Process message
+    // Process message
     if(recvMessage.messageType == registerTFA) {
     TFAServerToClient responseMessage;
     responseMessage.messageType = confirmTFA;
@@ -78,7 +99,7 @@ int main(int argc, char *argv[]) {
         close(serverSock);
         exit(1);
     }
-    printf("[TFA Server] Received messageType=%d userID=%u timestamp=%lu digitalSig=%lu \n",
+    printf("[TFA Server]: Received messageType=%d userID=%u timestamp=%lu digitalSig=%lu \n",
     recvMessage.messageType, recvMessage.userID, recvMessage.timestamp, recvMessage.digitalSig);
 
     if(recvMessage.messageType == registerTFA) {
@@ -93,10 +114,10 @@ int main(int argc, char *argv[]) {
             close(serverSock);
             exit(1);
         }else {
-            printf("[TFA Server] Sent confirmTFA response to %s:%d for user %u\n",
+            printf("[TFA Server]: Sent confirmTFA response to %s:%d for user %u\n",
                    inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), recvMessage.userID);
         }
         close(serverSock);
         return 0;
     }
-}}}
+}}
