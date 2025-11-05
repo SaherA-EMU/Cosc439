@@ -29,13 +29,13 @@ int main(int argc, char *argv[]) {
     }
 // Initialize server
     printf("TFAServer module loaded.\n");
+
     unsigned short serverPort = (unsigned short)atoi(argv[1]);
-    int serverSock = -1, clientSock = -1;
+    int serverSock;
     struct sockaddr_in serverAddr, clientAddr;
-    unsigned int clientLen;
-    ssize_t numBytes;
+    socklen_t clientLen = sizeof(clientAddr);
 // Create socket
-    serverSock = socket(AF_INET, SOCK_STREAM, 0);
+    serverSock = socket(AF_INET, SOCK_DGRAM, 0);
     if (serverSock < 0) {
         perror("Socket() failed");
         exit(1);
@@ -46,54 +46,57 @@ int main(int argc, char *argv[]) {
     serverAddr.sin_family = AF_INET;                /* IPv4*/
     serverAddr.sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming connection*/
     serverAddr.sin_port = htons(serverPort);        /* convert host to network short(Local port) */
-// Bind, listen, and accept
+// Bind, listen, and receive
     if (bind(serverSock, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
         perror("Bind() failed");
         exit(1);
     }
     printf("[TFA Server] Bind completed successfully.\n");
-    if(listen(serverSock, MAX) < 0) {
-        perror("Listen() failed");
-        exit(1);
-    }
     printf("[TFA Server] Listening on port %u...\n", serverPort);
-    clientLen = sizeof(clientAddr);
-    clientSock = accept(serverSock, (struct sockaddr *) &clientAddr, &clientLen);
-    if (clientSock < 0) {
-        perror("Accept() failed");
-        close(serverSock);
-        exit(1);
-    }
-// Connect to client
-    printf("[TFA Server] Client connected: %s:%u\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
-// Receive message from client
+    while(1) {
     TFAClientOrLodiServerToTFAServer recvMessage;
-    numBytes = recv(clientSock, &recvMessage, sizeof(recvMessage), 0);
-    if (numBytes < 0) {
-        perror("Recv() failed");
-        close(clientSock);
+    ssize_t recvLength = recvfrom(serverSock, &recvMessage, sizeof(recvMessage), 0,
+                                  (struct sockaddr *) &clientAddr, &clientLen);
+    if (recvLength < 0) {
+        perror("Recvfrom() failed");
         close(serverSock);
         exit(1);
     }
-    printf("[TFA Server] Received messageType=%d userID=%u timestamp=%lu digitalSig=%lu (bytes=%zd)\n",
-    recvMessage.messageType, recvMessage.userID, recvMessage.timestamp, recvMessage.digitalSig, numBytes);
+    printf("\n[TFA Server] Received message from %s:%u\n",inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+    printf("[TFA Server] messageType=%d userID=%u timestamp=%lu digitalSig=%lu \n", recvMessage.messageType, recvMessage.userID, recvMessage.timestamp, recvMessage.digitalSig);
+// Process message
+    if(recvMessage.messageType == registerTFA) {
+    TFAServerToClient responseMessage;
+    responseMessage.messageType = confirmTFA;
+    responseMessage.userID = recvMessage.userID;
+
+// Send response to client
+    ssize_t sentBytes = sendto(serverSock, &responseMessage, sizeof(responseMessage), 0,
+                               (struct sockaddr *) &clientAddr, clientLen);
+    if (sentBytes < 0) {
+        perror("Sendto() failed");
+        close(serverSock);
+        exit(1);
+    }
+    printf("[TFA Server] Received messageType=%d userID=%u timestamp=%lu digitalSig=%lu \n",
+    recvMessage.messageType, recvMessage.userID, recvMessage.timestamp, recvMessage.digitalSig);
 
     if(recvMessage.messageType == registerTFA) {
         TFAServerToClient responseMessage;
         responseMessage.messageType = confirmTFA;
         responseMessage.userID = recvMessage.userID;
 // Send response to client
-     ssize_t sentBytes = send(clientSock, &responseMessage, sizeof(responseMessage), 0);
-        if (sentBytes < 0) {
-            perror("Send() failed");
-            close(clientSock);
+     ssize_t sentBytes = sendto(serverSock, &responseMessage, sizeof(responseMessage), 0,
+                                (struct sockaddr *) &clientAddr, clientLen);
+        if (sentBytes != sizeof(responseMessage)) {
+            perror("Sendto() failed");
             close(serverSock);
             exit(1);
+        }else {
+            printf("[TFA Server] Sent confirmTFA response to %s:%d for user %u\n",
+                   inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), recvMessage.userID);
         }
-        printf("[TFA Server] Sent response  userID=%u (bytes=%zd)\n",
-        responseMessage.userID, sentBytes);
-        close(clientSock);
         close(serverSock);
         return 0;
     }
-}
+}}}

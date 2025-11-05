@@ -26,7 +26,7 @@ int main() {
     scanf("%u", &portNumber);
     printf("[TFA Client] User ID: %u, IP Address: %s, Port Number: %u\n", userID, IPAddress, portNumber);
 // Create socket and connect to server
-    int sock = socket(AF_INET, SOCK_STREAM, 0);
+    int sock = socket(AF_INET, SOCK_DGRAM, 0);
     if (sock < 0) {
         perror("Socket() failed");
         return 1;
@@ -39,7 +39,7 @@ int main() {
     serverAddr.sin_addr.s_addr = inet_addr(IPAddress);
     serverAddr.sin_port = htons(portNumber);
     printf("[TFA Client] serverAddr configured.\n");
-// Connect to server    
+// Connect to server
     if (connect(sock, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
         perror("Connect() failed");
         close(sock);
@@ -52,15 +52,17 @@ int main() {
     regMessage.userID = userID;
     regMessage.timestamp =  123456789; // Example timestamp
     regMessage.digitalSig = 987654321; // Example digital signature
-    if(send(sock, &regMessage, sizeof(regMessage), 0) != sizeof(regMessage)) {
-        perror("Send() failed");
+    if(sendto(sock, &regMessage, sizeof(regMessage), 0 ,
+        (struct sockaddr *) &serverAddr, sizeof(serverAddr)) != sizeof(regMessage)) {
+        perror("Sendto() failed");
         close(sock);
         return 1;
     }
     printf("[TFA Client] Registration message sent to server.\n");
 // Receive response from server
     TFAClientOrLodiServerToTFAServer responseMessage;
-    if(recv(sock, &responseMessage, sizeof(responseMessage), 0) <= 0) {
+    socklen_t addrLen = sizeof(serverAddr);
+    if(recvfrom(sock, &responseMessage, sizeof(responseMessage), 0, (struct sockaddr *) &serverAddr, &addrLen) <= 0) {
         perror("Recv() failed");
         close(sock);
         return 1;
