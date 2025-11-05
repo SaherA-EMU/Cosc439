@@ -15,7 +15,7 @@ typedef struct {
 typedef struct {
     enum {ackRegisterKey, responsePublicKey} messageType;
     unsigned int userID;
-    unsigned int publicKey;
+    unsigned long publicKey;
 } PKServerToPClientOrLodiClient;
 typedef struct {
     unsigned int userID;
@@ -81,18 +81,19 @@ int main() {
             printf("[PKE Server]: Registered user %u with key %lu\n", recMessage.userID, recMessage.publicKey);
 
         }else if(recMessage.messageType == requestKey) {  //handle the case where the user is already registered messageType = 1
+            keyFinder = 0;
             for(int i = 0; i < userCounter; i++){ //iterate up to the number of registered users
                 if(users[i].userID == recMessage.userID){
                     keyFinder = users[i].publicKey;
                     break;
                 }
             }
+            sendMessage.messageType = responsePublicKey;
+            sendMessage.userID =recMessage.userID;
+            sendMessage.publicKey = keyFinder;
+            printf("[PKE Server]: Sent public key %lu for user %u\n", sendMessage.publicKey, sendMessage.userID);
         }
-        sendMessage.messageType = responsePublicKey;
-        sendMessage.userID =recMessage.userID;
-        sendMessage.publicKey = keyFinder;
 
-        printf("[PKE Server]: Sent public key %lu for user %u\n", sendMessage.publicKey, sendMessage.userID);
         if(sendto(sock, &sendMessage, sizeof(sendMessage), 0,
                     (struct sockaddr *) &clientAddress, clientAddressLength) != sizeof(sendMessage)){
                         perror("sendto() failed");
