@@ -15,16 +15,16 @@ typedef struct {
 int main() {
 // Ask user for input
     printf("TFAClient module loaded.\n");
-    printf("Please enter your User ID: ");
+    printf("[TFA Client] Please enter your User ID: ");
     unsigned int userID;
     scanf("%u", &userID);
-    printf("Please enter your IP Address: ");
+    printf("[TFA Client] Please enter your IP Address: ");
     char IPAddress[16];
     scanf("%15s", IPAddress);
-    printf("Please enter your Port Number: ");
+    printf("[TFA Client] Please enter your Port Number: ");
     unsigned int portNumber;
     scanf("%u", &portNumber);
-    printf("User ID: %u, IP Address: %s, Port Number: %u\n", userID, IPAddress, portNumber);
+    printf("[TFA Client] User ID: %u, IP Address: %s, Port Number: %u\n", userID, IPAddress, portNumber);
 // Create socket and connect to server
     int sock = socket(AF_INET, SOCK_STREAM, 0);
     if (sock < 0) {
@@ -32,20 +32,20 @@ int main() {
         return 1;
     }
 // Configure server address structure
-    printf("Socket created successfully.\n");
+    printf("[TFA Client] Socket created successfully.\n");
     struct sockaddr_in serverAddr;
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;
     serverAddr.sin_addr.s_addr = inet_addr(IPAddress);
     serverAddr.sin_port = htons(portNumber);
-    printf("serverAddr configured.\n");
+    printf("[TFA Client] serverAddr configured.\n");
 // Connect to server    
     if (connect(sock, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
         perror("Connect() failed");
         close(sock);
         return 1;
     }
-    printf("Connected to server successfully.\n");
+    printf("[TFA Client] Connected to server successfully.\n");
 // Send registration message to server
     TFAClientOrLodiServerToTFAServer regMessage;
     regMessage.messageType = registerTFA;
@@ -57,7 +57,7 @@ int main() {
         close(sock);
         return 1;
     }
-    printf("Registration message sent to server.\n");
+    printf("[TFA Client] Registration message sent to server.\n");
 // Receive response from server
     TFAClientOrLodiServerToTFAServer responseMessage;
     if(recv(sock, &responseMessage, sizeof(responseMessage), 0) <= 0) {
@@ -65,11 +65,11 @@ int main() {
         close(sock);
         return 1;
     }
-    printf("Response received from server.\n");
-    printf("Message Type: %d\n", responseMessage.messageType);
-    printf("User ID: %u\n", responseMessage.userID);
-    printf("Timestamp: %lu\n", responseMessage.timestamp);
-    printf("Digital Signature: %lu\n", responseMessage.digitalSig);
+    printf("[TFA Client] Response received from server.\n");
+    printf("[TFA Client] Message Type: %d\n", responseMessage.messageType);
+    printf("[TFA Client] User ID: %u\n", responseMessage.userID);
+    printf("[TFA Client] Timestamp: %lu\n", responseMessage.timestamp);
+    printf("[TFA Client] Digital Signature: %lu\n", responseMessage.digitalSig);
     close(sock);
     return 0;
 }
