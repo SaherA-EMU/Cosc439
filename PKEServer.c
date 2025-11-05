@@ -5,7 +5,8 @@
 #include <string.h>     // for memset()
 #include <arpa/inet.h>  // for inet_addr() and htons()
 
-// structs to be sent and received
+
+// structs to be sent stored or received
 typedef struct {
     enum { registerKey, requestKey} messageType;
     unsigned int userID;
@@ -16,15 +17,23 @@ typedef struct {
     unsigned int userID;
     unsigned int publicKey;
 } PKServerToPClientOrLodiClient;
+typedef struct {
+    unsigned int userID;
+    unsigned long publicKey;
+} RegisteredUser;
+
 
 int main() {
     // variable declaration and initialization
     struct sockaddr_in serverAddress, clientAddress;
-    unsigned int clientLen;
     PClientOrLodiServertoPKEServer recMessage;
     PKServerToPClientOrLodiClient sendMessage;
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
     unsigned int clientAddressLength;
+    RegisteredUser users[100];
+    int userCounter = 0;
+    unsigned long keyFinder = 0;
+
     printf("PKEServer module loaded.\n");
     // Check  if socket is made
     if (sock < 0) {
@@ -60,10 +69,30 @@ int main() {
         printf("[PKE Server]: User ID: %u\n", recMessage.userID);
         printf("[PKE Server]: Public Key: %lu \n", recMessage.publicKey);
 
-        sendMessage.messageType =0;
-        sendMessage.userID =recMessage.userID;
-        sendMessage.publicKey = recMessage.publicKey;
+        if(recMessage.messageType == registerKey){  //if messageType = 0 then enter here
+            // store user info in an array
+            users[userCounter].userID = recMessage.userID;
+            users[userCounter].publicKey = recMessage.publicKey;
+            userCounter++; //increment counter of registered users
 
+            sendMessage.messageType = ackRegisterKey;
+            sendMessage.userID = recMessage.userID;
+            sendMessage.publicKey = recMessage.publicKey;
+            printf("[PKE Server]: Registered user %u with key %lu\n", recMessage.userID, recMessage.publicKey);
+
+        }else if(recMessage.messageType == requestKey) {  //handle the case where the user is already registered messageType = 1
+            for(int i = 0; i < userCounter; i++){ //iterate up to the number of registered users
+                if(users[i].userID == recMessage.userID){
+                    keyFinder = users[i].publicKey;
+                    break;
+                }
+            }
+        }
+        sendMessage.messageType = responsePublicKey;
+        sendMessage.userID =recMessage.userID;
+        sendMessage.publicKey = keyFinder;
+
+        printf("[PKE Server]: Sent public key %lu for user %u\n", sendMessage.publicKey, sendMessage.userID);
         if(sendto(sock, &sendMessage, sizeof(sendMessage), 0,
                     (struct sockaddr *) &clientAddress, clientAddressLength) != sizeof(sendMessage)){
                         perror("sendto() failed");
