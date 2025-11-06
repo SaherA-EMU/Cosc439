@@ -37,8 +37,8 @@ typedef struct{
 
 
 int main(){
-    //variable declaration and intialization
-    int sock_PKE, sock_recv;
+    //variable declaration and intialization for PKE
+    int sock_PKE;
     struct sockaddr_in pkeAddress;
     socklen_t pkeAddressLength = sizeof(pkeAddress);
     PClientOrLodiServertoPKEServer requestMsg;
@@ -84,6 +84,57 @@ int main(){
     printf("                UserID: %u\n", responseMsg.userID);
     printf("                Public Key: %lu\n", responseMsg.publicKey);
     
+    
+    //variable decalaration for TFA
+    int sock_TFA;
+    struct sockaddr_in tfaAddress;
+    socklen_t tfaAddressLength =sizeof(tfaAddress);
+    TFAClientOrLodiServerToTFAServer authRequest;
+    TFAServerToLodiServer authResponse;
+
+    // socket creation for TFA
+    if((sock_TFA = socket(AF_INET,SOCK_DGRAM, 0)) < 0){
+        perror("[Lodi Server]: socket() for TFA failed");
+        close(sock_PKE);
+        return 1;
+    }
+    memset(&tfaAddress, 0, sizeof(tfaAddress));
+    tfaAddress.sin_family = AF_INET;
+    tfaAddress.sin_port = htons(6060); //also random
+    tfaAddress.sin_addr.s_addr =inet_addr("127.0.0.1"); //just local for testing
+
+    printf("[Lodi Server]: Ready to communicate with the TFA Server\n");
+
+    authRequest.messageType = requestAuth;
+    authRequest.userID = 2;
+    authRequest.timestamp = 12345678; //test value
+    authRequest.digitalSig = 987654321; //test value
+
+    printf("[Lodi Server]: Sending authentication request for user %u\n", authRequest.userID);
+
+    //send to TFA Server
+    if(sendto(sock_TFA, &authRequest, sizeof(authRequest), 0, (struct sockaddr *)&tfaAddress, tfaAddressLength)!= sizeof(authRequest)){
+        perror("[Lodi Server]: sendto() to TFA failed");
+        close(sock_TFA);
+        close(sock_PKE);
+        return 1;
+    }
+
+    //recive response
+    ssize_t recvLengthTFA = recvfrom(sock_TFA, &authResponse, sizeof(authResponse), 0, (struct sockaddr *)&tfaAddress, &tfaAddressLength);
+
+    if (recvLengthTFA < 0) {
+        perror("[Lodi Server]: recvfrom() from TFA failed");
+        close(sock_PKE);
+        close(sock_TFA);
+        return 1;
+    }else{
+        printf("[Lodi Server]: Received TFA response: \n");
+        printf("                Message Type: %d\n", authResponse.messageType);
+        printf("                User ID: %u\n", authResponse.userID);
+    }
+
     close(sock_PKE);
+    close(sock_TFA);
     return 0;
 }
