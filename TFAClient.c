@@ -153,7 +153,7 @@ int main() {
             TFAClientOrLodiServerToTFAServer TFAResponse;
             memset(&TFAVer, 0, sizeof(TFAVer));
             memset(&TFAResponse, 0, sizeof(TFAResponse));
-            TFAResponse.messageType = ackRegTFA;
+            TFAResponse.messageType = ackPushTFA;
             
             socklen_t AddrLen = sizeof(serverAddr);
             if (recvfrom(sock, &TFAVer, sizeof(TFAVer), 0, (struct sockaddr*)&serverAddr, &AddrLen) <= 0) {
@@ -170,7 +170,7 @@ int main() {
                 TFAResponse.userID = TFAVer.userID;
                 if (sendto(sock, &TFAResponse, sizeof(TFAResponse), 0,
                     (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != sizeof(TFAResponse)) {
-                    close(tempSock);
+                    close(sock);
                     return 1;
                 }
                 printf("[TFA Client]: User TFA not set up.\n");
@@ -188,7 +188,7 @@ int main() {
                     if (sendto(sock, &TFAResponse, sizeof(TFAResponse), 0,
                         (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != sizeof(TFAResponse)) {
                         perror("Sendto() failed");
-                        close(tempSock);
+                        close(sock);
                         return 1;
                     }
                     printf("[TFA Client]: User accepted TFA Verification.\n");
@@ -199,7 +199,7 @@ int main() {
                     if (sendto(sock, &TFAResponse, sizeof(TFAResponse), 0,
                         (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != sizeof(TFAResponse)) {
                         perror("Sendto() failed");
-                        close(tempSock);
+                        close(sock);
                         return 1;
                     }
                     printf("[TFA Client]: User denied TFA Verification.\n");
