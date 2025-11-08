@@ -154,32 +154,26 @@ int main() {
             memset(&TFAVer, 0, sizeof(TFAVer));
             memset(&TFAResponse, 0, sizeof(TFAResponse));
             TFAResponse.messageType = ackRegTFA;
-
-            if (recvfrom(sock, &TFAVer, sizeof(TFAVer), 0, (struct sockaddr*)&serverAddr, &addrLen) <= 0) {
+            
+            socklen_t AddrLen = sizeof(serverAddr);
+            if (recvfrom(sock, &TFAVer, sizeof(TFAVer), 0, (struct sockaddr*)&serverAddr, &AddrLen) <= 0) {
                 perror("Recv() failed");
                 close(sock);
                 return 1;
             }
-
-            ssize_t recvLength = recvfrom(tempSock, &TFAVer, sizeof(TFAVer), 0,
-                (struct sockaddr*)&clientAddr, &clientLen);
-            if (recvLength < 0) {
-                perror("Recvfrom() failed");
-                close(tempSock);
-                exit(1);
-            }
+            printf("[TFA Client]: Received message push from TFA Server.");
             printf("[TFA Client]: UserID: %lu.\n",TFAVer.userID);
 
             // cover Case where user doesn't have TFA activated
             if (TFAVer.userID == -1) {
 
                 TFAResponse.userID = TFAVer.userID;
-                if (sendto(tempSock, &TFAResponse, sizeof(TFAResponse), 0,
+                if (sendto(sock, &TFAResponse, sizeof(TFAResponse), 0,
                     (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != sizeof(TFAResponse)) {
                     close(tempSock);
                     return 1;
                 }
-                printf("[TFA Client]: User already denied.\n");
+                printf("[TFA Client]: User TFA not set up.\n");
             }
             else {
 
@@ -191,7 +185,7 @@ int main() {
                 // if Y, then accepted, else denied
                 if (strcmp(ver, "Y") == 0 || strcmp(query, "y") == 0) {
                     TFAResponse.userID = TFAVer.userID;
-                    if (sendto(tempSock, &TFAResponse, sizeof(TFAResponse), 0,
+                    if (sendto(sock, &TFAResponse, sizeof(TFAResponse), 0,
                         (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != sizeof(TFAResponse)) {
                         perror("Sendto() failed");
                         close(tempSock);
@@ -202,7 +196,7 @@ int main() {
                 //denied case
                 else {
                     TFAResponse.userID = 20;
-                    if (sendto(tempSock, &TFAResponse, sizeof(TFAResponse), 0,
+                    if (sendto(sock, &TFAResponse, sizeof(TFAResponse), 0,
                         (struct sockaddr*)&serverAddr, sizeof(serverAddr)) != sizeof(TFAResponse)) {
                         perror("Sendto() failed");
                         close(tempSock);
