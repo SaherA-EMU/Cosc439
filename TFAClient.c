@@ -1,5 +1,6 @@
 #include <stdio.h>      /* for printf() and fprintf() */
 #include <sys/socket.h> /* for recvfrom() and sendto() */
+#include <sys/socket.h> /* for recvfrom() and sendto() */
 #include <unistd.h>     /* for close() */
 #include <string.h>     /* for memset() */
 #include <arpa/inet.h>  /* for inet_addr() and htons() */
@@ -7,6 +8,7 @@
 #include <stdbool.h>    // adds boolean operator
 #include <stdlib.h>     // just for rand(), really
 
+// structs to be sent and received
 // structs to be sent and received
 typedef struct {
     enum { registerTFA, ackRegTFA, ackPushTFA, requestAuth} messageType;

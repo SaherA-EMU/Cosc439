@@ -86,10 +86,15 @@ int main(int argc, char *argv[]) {
     socklen_t clientLen = sizeof(clientAddr);
 // Create socket
     serverSock = socket(AF_INET, SOCK_DGRAM, 0);
+    socklen_t clientLen = sizeof(clientAddr);
+// Create socket
+    serverSock = socket(AF_INET, SOCK_DGRAM, 0);
     if (serverSock < 0) {
         perror("Socket() failed");
         exit(1);
     }
+    printf("[TFA Server]: Socket created successfully.\n");
+// Configure server address structure
     printf("[TFA Server]: Socket created successfully.\n");
 // Configure server address structure
     memset(&serverAddr, 0, sizeof(serverAddr));
