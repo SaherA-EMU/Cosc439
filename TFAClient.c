@@ -27,22 +27,11 @@ long privateKeys[20] = { 13,  17,  19, 23,  25,  29,  31, 35,  37,  41, 43,  47,
 // NOTE: this doesnt handle powers of y below 8, which is a bit of an oversight. Too late to fix directly so keys adjusted.
 // RSA encryption, works for any power mod function assuming the given N is 299.
 long RSAencrypt(long x, long y) {
-    int result = x;
-    int mod4 = (x * x * x * x) % 299;
-    result = mod4 * mod4;
-    result = result % 299;
-    while (y > 11) {
-        result = result * mod4;
+    int result = 1;
+    for(int i = 0; i < y; i++){
+        result = result * x;
         result = result % 299;
-        y = y - 4;
     }
-    int finish = 1;
-    for (int i = 0; i < y - 8; i++) {
-        finish = finish * x;
-    }
-    finish = finish % 299;
-    result = result * finish;
-    result = result % 299;
     return result;
 }
 
@@ -50,26 +39,7 @@ long RSAencrypt(long x, long y) {
 int main() {
     printf("[TFA Client] module loaded.\n");
 
-    struct sockaddr_in serverAddr,tempAddr;
-
-    // Create socket for ackPushTFA
-    int tempSock = socket(AF_INET, SOCK_DGRAM, 0);
-    if (tempSock < 0) {
-        perror("Socket() failed");
-        exit(1);
-    }
-
-    // Configure server address structure
-    memset(&tempAddr, 0, sizeof(tempAddr));
-    tempAddr.sin_family = AF_INET;                /* IPv4*/
-    tempAddr.sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming connection*/
-    tempAddr.sin_port = htons(6500);        /* convert host to network short(Local port) */
-    // Bind, listen, and receive
-
-    if (bind(tempSock, (struct sockaddr*)&tempAddr, sizeof(tempAddr)) < 0) {
-        perror("Bind() failed");
-        exit(1);
-    }
+    struct sockaddr_in serverAddr;
 
     // Create socket and connect to server
     int sock = socket(AF_INET, SOCK_DGRAM, 0);
@@ -177,7 +147,7 @@ int main() {
         }
 
         // verify a TFA login
-        if (strcmp(query, "Q") != 0 && strcmp(query, "q") != 0) {
+        else if (strcmp(query, "Q") != 0 && strcmp(query, "q") != 0) {
             // Await a push notification from TFA Server
             TFAServerToClient TFAVer;
             TFAClientOrLodiServerToTFAServer TFAResponse;
@@ -185,11 +155,11 @@ int main() {
             memset(&TFAResponse, 0, sizeof(TFAResponse));
             TFAResponse.messageType = ackRegTFA;
 
-            struct sockaddr_in clientAddr;
-            socklen_t clientLen = sizeof(clientAddr);
-
-            
-            printf("[TFA Client]: Temp socket bound.\n");
+            if (recvfrom(sock, &TFAVer, sizeof(TFAVer), 0, (struct sockaddr*)&serverAddr, &addrLen) <= 0) {
+                perror("Recv() failed");
+                close(sock);
+                return 1;
+            }
 
             ssize_t recvLength = recvfrom(tempSock, &TFAVer, sizeof(TFAVer), 0,
                 (struct sockaddr*)&clientAddr, &clientLen);
