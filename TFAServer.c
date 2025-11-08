@@ -186,7 +186,7 @@ int main(int argc, char *argv[]) {
             //printf("Key: %lu\n", userInfo.publicKey);
             //printf("Stamp: %lu\n", recvMessage.timestamp);
             //printf("DigSig: %lu\n", RSAencrypt(recvMessage.digitalSig, userInfo.publicKey));
-            printf("Stamp: %lu, DigSig: %lu, Key: %lu", recvMessage.timestamp, recvMessage.digitalSig, userInfo.publicKey);
+            printf("Stamp: %lu, DigSig: %lu, Key: %lu\n", recvMessage.timestamp, recvMessage.digitalSig, userInfo.publicKey);
             if (recvMessage.timestamp != RSAencrypt(recvMessage.digitalSig, userInfo.publicKey)) {
                 printf("[TFA Server]: Incorrect public key received.\n");
                 perror("Recv() failed");
@@ -227,6 +227,13 @@ int main(int argc, char *argv[]) {
 
             TFAServerToClient pushAuth;
             memset(&pushAuth, 0, sizeof(pushAuth));
+            pushAuth.messageType = ackPushTFA;
+            if(authorized[recvMessage.userID].stat == 1){
+                pushAuth.userID = recvMessage.userID;
+            }
+            else{
+                pushAuth.userID = -1;
+            }
             while (1){
                 if(sendto(serverSock, &pushAuth, sizeof(pushAuth), 0, 
                     (struct sockaddr*)&clientAddr,clientLen) != sizeof(pushAuth)){
