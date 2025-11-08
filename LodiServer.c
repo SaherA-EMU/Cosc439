@@ -49,22 +49,11 @@ typedef struct{
 } PClientOrLodiServertoPKEServer;
 
 long RSAencrypt(long x, long y) {
-    int result = x;
-    int mod4 = (x * x * x * x) % 299;
-    result = mod4 * mod4;
-    result = result % 299;
-    while (y > 11) {
-        result = result * mod4;
+    int result = 1;
+    for(int i = 0; i < y; i++){
+        result = result * x;
         result = result % 299;
-        y = y - 4;
     }
-    int finish = 1;
-    for (int i = 0; i < y - 8; i++) {
-        finish = finish * x;
-    }
-    finish = finish % 299;
-    result = result * finish;
-    result = result % 299;
     return result;
 }
 
