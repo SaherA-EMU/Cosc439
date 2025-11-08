@@ -88,7 +88,7 @@ int main() {
         // Configuration to Lodi Server
         memset(&LodiAddress, 0, sizeof(LodiAddress));
         LodiAddress.sin_family = AF_INET;
-        LodiAddress.sin_port = htons(7760); //same port as what I put in PKEServer
+        LodiAddress.sin_port = htons(6670); //same port as what I put in PKEServer
         //pkeAddress.sin_addr.s_addr = inet_addr("127.0.0.1"); // I just put this to simplify testing
         LodiAddress.sin_addr.s_addr = INADDR_ANY;
 
