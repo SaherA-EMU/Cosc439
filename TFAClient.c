@@ -177,7 +177,7 @@ int main() {
         }
 
         // verify a TFA login
-        if (strcmp(query, "Q") != 0 && strcmp(query, "q") != 0) {
+        else if (strcmp(query, "Q") != 0 && strcmp(query, "q") != 0) {
             // Await a push notification from TFA Server
             TFAServerToClient TFAVer;
             TFAClientOrLodiServerToTFAServer TFAResponse;
@@ -191,8 +191,9 @@ int main() {
             
             printf("[TFA Client]: Temp socket bound.\n");
 
-            ssize_t recvLength = recvfrom(tempSock, &TFAVer, sizeof(TFAVer), 0,
-                (struct sockaddr*)&clientAddr, &clientLen);
+            socklen_t addrLen = sizeof(serverAddr);
+            ssize_t recvLength = recvfrom(sock, &TFAVer, sizeof(TFAVer), 0,
+                (struct sockaddr*)&serverAddr, &addrLen);
             if (recvLength < 0) {
                 perror("Recvfrom() failed");
                 close(tempSock);

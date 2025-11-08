@@ -93,6 +93,7 @@ int main() {
 
             }
             userCounter++; //increment counter of registered users
+            printf("[PKE Server]: Switch to the TFAClient and authorize this user to continue.\n");
         }
 
         else if (recMessage.messageType == requestKey) {  //handle the case where the user is already registered messageType = 1
@@ -118,6 +119,7 @@ int main() {
             }
         }
     }
+    
     close(sock);
     return 0;
 }

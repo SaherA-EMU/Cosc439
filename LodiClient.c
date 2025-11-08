@@ -88,7 +88,7 @@ int main() {
         // Configuration to Lodi Server
         memset(&LodiAddress, 0, sizeof(LodiAddress));
         LodiAddress.sin_family = AF_INET;
-        LodiAddress.sin_port = htons(7760); //same port as what I put in PKEServer
+        LodiAddress.sin_port = htons(6670); //same port as what I put in PKEServer
         //pkeAddress.sin_addr.s_addr = inet_addr("127.0.0.1"); // I just put this to simplify testing
         LodiAddress.sin_addr.s_addr = INADDR_ANY;
 
@@ -168,12 +168,16 @@ int main() {
                     if ((sock_Lodi = socket(AF_INET, SOCK_DGRAM, 0)) < 0) {
                         perror("[Lodi Client]: socket() for Lodi failed");
                         exit(1);
+                    }else{
+                        printf("[Lodi Client]: Username and password accepted.\n");
                     }
 
                     if (connect(sock_Lodi, (struct sockaddr*)&LodiAddress, LodiAddressLength) < 0) {
                         perror("Connect() failed");
                         close(sock_Lodi);
                         return 1;
+                    }else{
+                        printf("[Lodi Client]: Connected to Lodi Server successfully.\n");
                     }
                     printf("[Lodi Client]: Ready to communicate with Lodi Server\n");
 
@@ -192,6 +196,8 @@ int main() {
                         perror("Sendto() failed");
                         close(sock_Lodi);
                         return 1;
+                    }else{
+                        printf("[Lodi Client]: Login request sent to Lodi Server.\n");
                     }
                     printf("[Lodi Client]: User: %u, Stamp: %lu, Sig: %lu\n",loginReq.userID, loginReq.timestamp, loginReq.digitalSig);
                     printf("[Lodi Client]: Login details sent.\n");
@@ -212,7 +218,7 @@ int main() {
                     }
                 }
                 else if (i >= 19) {
-                    printf("[Lodi Client]: The username and/or password are incorect.\n");
+                    printf("[Lodi Client]: The username and/or password are incorrect.\n");
                 }
             }
             close(sock_Lodi);

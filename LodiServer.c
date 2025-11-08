@@ -194,8 +194,8 @@ int main(){
 
             // set up reqMsg with userID and message type
             memset(&authReq, 0, sizeof(authReq));
-            requestMsg.messageType = requestAuth;
-            requestMsg.userID = responseMsg.userID;
+            authReq.messageType = requestAuth;
+            authReq.userID = responseMsg.userID;
 
             // send user auth to TFAServer
             if (sendto(TFASock, &authReq, sizeof(authReq), 0,
