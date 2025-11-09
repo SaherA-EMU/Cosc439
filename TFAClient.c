@@ -148,6 +148,9 @@ int main() {
 
         // verify a TFA login
         else if (strcmp(query, "Q") != 0 && strcmp(query, "q") != 0) {
+
+            printf("[TFA Client]: Awaiting push notification.");
+
             // Await a push notification from TFA Server
             TFAServerToClient TFAVer;
             TFAClientOrLodiServerToTFAServer TFAResponse;
@@ -161,6 +164,7 @@ int main() {
                 close(sock);
                 return 1;
             }
+
             printf("[TFA Client]: Received message push from TFA Server.");
             printf("[TFA Client]: UserID: %lu.\n",TFAVer.userID);
 
@@ -214,7 +218,6 @@ int main() {
 
         }
     }
-    close(tempSock);
     close(sock);
     return 0;
 }

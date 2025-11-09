@@ -142,7 +142,7 @@ int main(){
                 return 1;
             }
 
-            printf("[TFA Server]: Public key requested.\n");
+            printf("[Lodi Server]: Public key requested.\n");
 
             // receive the public key from the PKEServer
             memset(&PKEKey, 0, sizeof(PKEKey));
@@ -224,11 +224,11 @@ int main(){
             // Case: if ID is a match and TFA Server Verifies.
             if (authReq.userID == responseMsg.userID) {
                 
-                loginAuth.userID == authReq.userID;
+                loginAuth.userID = authReq.userID;
                 printf("[Lodi Server]: Auth Request verified. Logging in.\n");
 
                 if (sendto(lodiSock, &loginAuth, sizeof(loginAuth), 0,
-                    (struct sockaddr *)&clientAddress, sizeof(clientAddress)) != sizeof(clientAddressLength)) {
+                    (struct sockaddr *)&clientAddress, sizeof(clientAddress)) != sizeof(loginAuth)) {
                     perror("Sendto() failed");
                     close(lodiSock);
                     return 1;
@@ -237,11 +237,11 @@ int main(){
             // Case: ID does not currently have TFA set up.
             if (authReq.userID == -1) {
 
-                loginAuth.userID == authReq.userID;
+                loginAuth.userID = authReq.userID;
                 printf("[Lodi Server]: Auth Request denied.\n");
 
                 if (sendto(lodiSock, &loginAuth, sizeof(loginAuth), 0,
-                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(clientAddressLength)) {
+                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(loginAuth)) {
                     perror("Sendto() failed");
                     close(lodiSock);
                     return 1;
@@ -250,11 +250,11 @@ int main(){
             // Case: User denies TFA Verification.
             if (authReq.userID == 20) {
 
-                loginAuth.userID == authReq.userID;
+                loginAuth.userID = authReq.userID;
                 printf("[Lodi Server]: Auth Request denied.\n");
 
                 if (sendto(lodiSock, &loginAuth, sizeof(loginAuth), 0,
-                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(clientAddressLength)) {
+                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(loginAuth)) {
                     perror("Sendto() failed");
                     close(lodiSock);
                     return 1;

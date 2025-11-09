@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
         exit(1);
     } */
 // Initialize server
-    printf("TFAServer module loaded.\n");
+    printf("[TFAServer] module loaded.\n");
 
     //initialize the list of authorized users
     for (int i = 0; i < 20; i++) {
@@ -83,19 +83,16 @@ int main(int argc, char *argv[]) {
     //unsigned short serverPort = (unsigned short)atoi(argv[1]);
     int serverSock;
     struct sockaddr_in serverAddr, clientAddr;
-    //socklen_t clientLen = sizeof(clientAddr);
-// Create socket
-    serverSock = socket(AF_INET, SOCK_DGRAM, 0);
     socklen_t clientLen = sizeof(clientAddr);
+// Create socket hi
+    serverSock = socket(AF_INET, SOCK_DGRAM, 0);
+    clientLen = sizeof(clientAddr);
 // Create socket
     serverSock = socket(AF_INET, SOCK_DGRAM, 0);
     if (serverSock < 0) {
         perror("Socket() failed");
         exit(1);
     }
-    printf("[TFA Server]: Socket created successfully.\n");
-// Configure server address structure
-    printf("[TFA Server]: Socket created successfully.\n");
 // Configure server address structure
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;                /* IPv4*/
@@ -106,8 +103,8 @@ int main(int argc, char *argv[]) {
         perror("Bind() failed");
         exit(1);
     }
-    printf("[TFA Server]: Bind completed successfully.\n");
-    printf("[TFA Server]: Listening on port 7000");
+    printf("[TFA Server]: Listening on port 7000\n");
+
     while(1) { // Server does not close.
 
         // receive timestamp and digital sig
@@ -124,7 +121,7 @@ int main(int argc, char *argv[]) {
         // ack received message
         printf("\n[TFA Server]: Received message from %s:%u\n",inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
         printf("[TFA Server]: messageType=%d userID=%u timestamp=%lu digitalSig=%lu \n", recvMessage.messageType, recvMessage.userID, recvMessage.timestamp, recvMessage.digitalSig);
-        if(recvMessage.messageType == registerTFA){
+       if(recvMessage.messageType == registerTFA){
             printf("[TFA Server]: Received RegRequest from user %u\n", recvMessage.userID);
             printf("[TFA Server]: Received timestamp: %u\n", recvMessage.timestamp);
             printf("[TFA Server]: Received digitalSig %u\n", recvMessage.digitalSig);
@@ -147,11 +144,11 @@ int main(int argc, char *argv[]) {
             PserverAddr.sin_port = htons(5060);
             printf("[TFA Server]: serverAddr configured.\n");
 
-            if (connect(PKEsock, (struct sockaddr*)&PserverAddr, sizeof(PserverAddr)) < 0) {
-                perror("Connect() failed");
+            /*if (bind(PKEsock, (struct sockaddr*)&PserverAddr, sizeof(PserverAddr)) < 0) {
+                perror("bind() failed");
                 close(PKEsock);
                 return 1;
-            }
+            }*/
 
             printf("[TFA Server]: Connected to [PKE server] successfully.\n");
 
@@ -179,14 +176,13 @@ int main(int argc, char *argv[]) {
 
 
             printf("[TFA Server]: Public key received.\n");
+            
 
 
-
-        //check the digitalSig against the public key
+            //check the digitalSig against the public key
             //printf("Key: %lu\n", userInfo.publicKey);
             //printf("Stamp: %lu\n", recvMessage.timestamp);
             //printf("DigSig: %lu\n", RSAencrypt(recvMessage.digitalSig, userInfo.publicKey));
-            printf("Stamp: %lu, DigSig: %lu, Key: %lu\n", recvMessage.timestamp, recvMessage.digitalSig, userInfo.publicKey);
             if (recvMessage.timestamp != RSAencrypt(recvMessage.digitalSig, userInfo.publicKey)) {
                 printf("[TFA Server]: Incorrect public key received.\n");
                 perror("Recv() failed");
@@ -196,6 +192,7 @@ int main(int argc, char *argv[]) {
 
             authorized[userInfo.userID].stat = 1;
             printf("[TFA Server]: Public key validated.\n");
+            printf("[TFA Server]: User status:%u.\n",authorized[recvMessage.userID].stat);
             
             //Send confirmation back to client
             TFAServerToClient confirmMessage;
@@ -217,38 +214,42 @@ int main(int argc, char *argv[]) {
                 printf("[TFA Server]: Failed to receive ackRegTFA from user %u\n", recvMessage.userID);
             }
             printf("[TFA Server]: TFA confirmed for user %u\n", recvMessage.userID);
-        }
-        if (recvMessage.messageType == requestAuth) {
+            // printf("[TFA Server]: messageType %d\n", recvMessage.messageType);
+        } else if(recvMessage.messageType == requestAuth){
+    
+            // set up variable to send and recv from the TFA client, and then return a message to the Lodi Server.
 
-            //set up sock to connect to TFAClient for ack push TFA
-            printf("[TFA Server]: Received authRequest.\n");
             PKServerToPClientOrLodiClient responseAuth;
-            memset(&responseAuth, 0, sizeof(responseAuth));
-
             TFAServerToClient pushAuth;
+            memset(&responseAuth, 0, sizeof(responseAuth));
             memset(&pushAuth, 0, sizeof(pushAuth));
-            pushAuth.messageType = ackPushTFA;
+
+            pushAuth.messageType = pushTFA;
+
+            //send messages to TFA until
             if(authorized[recvMessage.userID].stat == 1){
                 pushAuth.userID = recvMessage.userID;
-            }
-            else{
+            } else{
                 pushAuth.userID = -1;
             }
-            while (1){
-                if(sendto(serverSock, &pushAuth, sizeof(pushAuth), 0, 
-                    (struct sockaddr*)&clientAddr,clientLen) != sizeof(pushAuth)){
-                    printf("[TFA Server]: TFAClient not ready to receive. waiting 5 seconds before trying again\n");
-                    usleep(5000); // wait 5 seconds before trying again
-                }else{
-                    printf("[TFA Server]: TFA Client found. sent push to TFAClient\n");
-                    break;
+            /*
+            sendto(serverSock, &pushAuth, sizeof(pushAuth), 0,(struct sockaddr*) &clientAddr, clientLen);*/    
+            if(sendto(serverSock, &pushAuth, sizeof(pushAuth), 0,(struct sockaddr*) &clientAddr, clientLen) < 0){
+                    perror("[TFA Server]: PushTFA failed");
+                    close(serverSock);
+                    return 1;
                 }
+                else{
+                    printf("[TFA SERVER] Sent push to client.");
+                }
+            
+            if(recvfrom(serverSock, &responseAuth, sizeof(responseAuth), 0, (struct sockaddr*)&clientAddr, &clientLen) <= 0){
+                perror("[TFA Server]: AckPushTFA failed");
+                close(serverSock);
             }
-            if(recvfrom(serverSock, &pushAuth, sizeof(pushAuth), 0,
-                        (struct sockaddr*) &clientAddr, &clientLen) <= 0){
-                            perror("[TFA Server]: AckPushTFA not received. \n");
-                            close(serverSock);
-                         }    
+            printf("[TFA Server]: Received AckPushTFA from TFA Client\n", recvMessage.userID);
+
+            //sendto(serverSock, &confirmMessage, sizeof(confirmMessage), 0,(struct sockaddr*) &clientAddr, clientLen);
 
             // 0 means the user does not yet have TFA active
             if (authorized[recvMessage.userID].stat == 0) {
@@ -263,20 +264,21 @@ int main(int argc, char *argv[]) {
             else {
                 responseAuth.userID = recvMessage.userID;
                 printf("[TFA Server]: user %u .\n", responseAuth.userID);
-                ssize_t pushTFA = sendto(serverSock, &responseAuth, sizeof(responseAuth), 0,
-                    (struct sockaddr*)&clientAddr, clientLen);
+                   ssize_t pushTFA = sendto(serverSock, &responseAuth, sizeof(responseAuth), 0,
+                      (struct sockaddr*)&clientAddr, clientLen);
                 printf("[TFA Server]: user %u does not have TFA activated.\n", recvMessage.userID);
             }
             // receive verification for the TFA client
-            ssize_t recvLength = recvfrom(serverSock, &responseAuth, sizeof(responseAuth), 0,
+            recvLength = recvfrom(serverSock, &responseAuth, sizeof(responseAuth), 0,
                 (struct sockaddr*)&clientAddr, &clientLen);
             printf("[TFA Server]: Received message from TFAClient\n", recvMessage.userID);
-            close(serverSock);
+            
 
             ssize_t pushTFA = sendto(serverSock, &responseAuth, sizeof(responseAuth), 0,
                 (struct sockaddr*)&clientAddr, clientLen);
             printf("[TFA Server]: sent final auth to Lodi Server\n", recvMessage.userID);
         }
     }
+    close(serverSock);
+    return 0;
 }
-    
