@@ -166,10 +166,10 @@ int main() {
             }
 
             printf("[TFA Client]: Received message push from TFA Server.");
-            printf("[TFA Client]: UserID: %lu.\n",TFAVer.userID);
+            printf("[TFA Client]: UserID: %u.\n",TFAVer.userID);
 
             // cover Case where user doesn't have TFA activated
-            if (TFAVer.userID == -1) {
+            if (TFAVer.userID == 0) {
 
                 TFAResponse.userID = TFAVer.userID;
                 if (sendto(sock, &TFAResponse, sizeof(TFAResponse), 0,
