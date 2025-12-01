@@ -2,7 +2,7 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "Build C",
+            "label": "Build C with Cygwin",
             "type": "shell",
             "command": "C:/cygwin64/bin/bash.exe",
             "args": [
@@ -14,10 +14,7 @@
                 "kind": "build",
                 "isDefault": true
             },
-            "problemMatcher": ["$gcc"],
-            "presentation": {
-                "clear": true
-            }
+            "problemMatcher": ["$gcc"]
         }
     ]
 }
