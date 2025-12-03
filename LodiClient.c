@@ -79,7 +79,7 @@ long RSAencrypt(long x, long y) {
 
 int main() {
     //variable declaration and intialization for PKE
-    int sock_PKE, sock_Lodi,TCPSock;
+    int sock_PKE, sock_Lodi,TCPSock, user_Input;
     struct sockaddr_in pkeAddress, LodiAddress,TCPServer;
     socklen_t pkeAddressLength = sizeof(pkeAddress);
     socklen_t LodiAddressLength = sizeof(LodiAddress);
@@ -241,18 +241,31 @@ int main() {
                 if(connect(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer))<  0){
                 //if logged in
                 printf("[Lodi Client]: Connected to server\n");
-                printf("Please");
-
-                // viewPost() implementation
-
-                // requesFeed() implementation
-
-                //follow(idol) implementation
-
-                //unfollow(idol) implmentation
-
-                //logout() and quit
+                printf("Please enter 1 to Login, 2 to post a message, 3 to request an idol feed, 4 to follow an idol, 5 to unfollow an idol, or 6 to logout\n");
+                scanf("%d", &user_Input);
+                if(user_Input == 1){
+                    //todo login implementation
                 }
+                if(user_Input == 2){
+                    //todo viewPost() implementation
+                }
+                if(user_Input == 3){
+                    //todo requesFeed() implementation
+                }
+                if(user_Input ==4){
+                    //todo follow(idol) implementation
+                }
+                if(user_Input==5){
+                    //todo unfollow(idol) implmentation
+                }
+                if(user_Input==6){
+                    //todo logout() and quit
+                    counter++;
+                }
+                else{
+                    //todo account for invalid input
+                }
+            }
             }
                 }
                 else if (i >= 19) {
