@@ -40,6 +40,21 @@ typedef struct {
     unsigned long digitalSig;
 } PKServerToPClientOrLodiClient;
 
+typedef struct{
+    enum{Login, Post, Feed, Follow, Unfollow, Logout}
+        request_Type;                                   //same as an unsigned int
+        unsigned int UserID;                            //unique client identifier
+        unsigned int IdolID;                            //unique client identifier
+        char message[100]                               //text message
+}LodiClientMessage;                                     //an unsigned int is 32 bits = 4 bytes
+
+typedef struct{
+    enum{AckLogin, AckPost, AckFeed, AckFollow, AckUnfollow, AckLogout}
+    message_Type;                                       //same as unsigned int
+    unsigned int IdolID;                                //unique client identifier
+    char message[100];                                  //text message
+}LodiServerMessage;                                     //an unsigned int is 32 bits = 4 bytes
+
 // RSA encryption, works for any power mod function assuming the given N is 299.
 long RSAencrypt(long x, long y) {
     int result = x;
@@ -64,13 +79,16 @@ long RSAencrypt(long x, long y) {
 
 int main() {
     //variable declaration and intialization for PKE
-    int sock_PKE, sock_Lodi;
-    struct sockaddr_in pkeAddress, LodiAddress;
+    int sock_PKE, sock_Lodi,TCPSock;
+    struct sockaddr_in pkeAddress, LodiAddress,TCPServer;
     socklen_t pkeAddressLength = sizeof(pkeAddress);
     socklen_t LodiAddressLength = sizeof(LodiAddress);
     PClientOrLodiServertoPKEServer requestMsg;
     PKServerToPClientOrLodiClient loginReq;
     PKServerToPClientOrLodiClient responseMsg;
+    LodiClientMessage clientMessage;
+    LodiServerMessage serverMessage;
+    char* message_text;
 
     printf("[Lodi Client]: Module Loaded. \n");
     
@@ -195,7 +213,7 @@ int main() {
                     }
                     printf("[Lodi Client]: User: %u, Stamp: %lu, Sig: %lu\n",loginReq.userID, loginReq.timestamp, loginReq.digitalSig);
                     printf("[Lodi Client]: Login details sent.\n");
-
+                    
                     // recv message here
 
                     memset(&responseMsg, 0, sizeof(responseMsg));
@@ -210,6 +228,32 @@ int main() {
                     if (responseMsg.userID == 21) {
                         printf("[Lodi Client]: User denied verification.\nLogin for user %u denied", i);
                     }
+                //todo: implement TCP HERE
+                int counter=0;
+               memset(&TCPServer, 0, sizeof(TCPServer));
+               TCPServer.sin_family=AF_INET;
+               TCPServer.sin_addr.s_addr=INADDR_ANY;
+               TCPServer.sin_port=htons(7002);
+               TCPSock = socket(AF_INET, SOCK_STREAM, 0);
+               socklen_t TCPServerAddress = sizeof(TCPServer);
+                while(counter!=0){
+                //listen for input here
+                if(connect(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer))<  0){
+                //if logged in
+                printf("[Lodi Client]: Connected to server\n");
+                printf("Please");
+
+                // viewPost() implementation
+
+                // requesFeed() implementation
+
+                //follow(idol) implementation
+
+                //unfollow(idol) implmentation
+
+                //logout() and quit
+                }
+            }
                 }
                 else if (i >= 19) {
                     printf("[Lodi Client]: The username and/or password are incorect.\n");
