@@ -244,22 +244,39 @@ int main() {
                 printf("Please enter 1 to Login, 2 to post a message, 3 to request an idol feed, 4 to follow an idol, 5 to unfollow an idol, or 6 to logout\n");
                 scanf("%d", &user_Input);
                 if(user_Input == 1){
-                    //todo login implementation
+                    //just asking for Ack Login,really
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 0;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                 }
                 if(user_Input == 2){
-                    //todo viewPost() implementation
+                    //todo Post() implementation
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 1;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                 }
                 if(user_Input == 3){
                     //todo requesFeed() implementation
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 2;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                 }
                 if(user_Input ==4){
                     //todo follow(idol) implementation
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 3;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                 }
                 if(user_Input==5){
-                    //todo unfollow(idol) implmentation
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 4;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                 }
                 if(user_Input==6){
                     //todo logout() and quit
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 5;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                     counter++;
                 }
                 else{
