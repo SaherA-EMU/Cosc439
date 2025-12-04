@@ -264,7 +264,6 @@ int main(){
                     return 0;
                 } 
                 listen(TCPSock, 5);
-        while(1){
                 int clientSock = accept(TCPSock,(struct sockaddr *) &TCPClient, &TCPClientLen);
                 if(clientSock<0){
                     perror("[Lodi Server]: accept error");
@@ -315,7 +314,6 @@ int main(){
                 } //end of innerTCPwhile loop
                 close(clientSock);
                 continue;
-            }//end of outerTCP while loop
             // Case: ID does not currently have TFA set up.
             if (authReq.userID == -1) {
 
