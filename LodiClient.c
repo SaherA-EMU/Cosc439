@@ -40,6 +40,21 @@ typedef struct {
     unsigned long digitalSig;
 } PKServerToPClientOrLodiClient;
 
+typedef struct{
+    enum{Login, Post, Feed, Follow, Unfollow, Logout}
+        request_Type;                                   //same as an unsigned int
+        unsigned int UserID;                            //unique client identifier
+        unsigned int IdolID;                            //unique client identifier
+        char message[100]                               //text message
+}LodiClientMessage;                                     //an unsigned int is 32 bits = 4 bytes
+
+typedef struct{
+    enum{AckLogin, AckPost, AckFeed, AckFollow, AckUnfollow, AckLogout}
+    message_Type;                                       //same as unsigned int
+    unsigned int IdolID;                                //unique client identifier
+    char message[100];                                  //text message
+}LodiServerMessage;                                     //an unsigned int is 32 bits = 4 bytes
+
 // RSA encryption, works for any power mod function assuming the given N is 299.
 long RSAencrypt(long x, long y) {
     int result = x;
@@ -64,13 +79,16 @@ long RSAencrypt(long x, long y) {
 
 int main() {
     //variable declaration and intialization for PKE
-    int sock_PKE, sock_Lodi;
-    struct sockaddr_in pkeAddress, LodiAddress;
+    int sock_PKE, sock_Lodi,TCPSock, user_Input;
+    struct sockaddr_in pkeAddress, LodiAddress,TCPServer;
     socklen_t pkeAddressLength = sizeof(pkeAddress);
     socklen_t LodiAddressLength = sizeof(LodiAddress);
     PClientOrLodiServertoPKEServer requestMsg;
     PKServerToPClientOrLodiClient loginReq;
     PKServerToPClientOrLodiClient responseMsg;
+    LodiClientMessage clientMessage;
+    LodiServerMessage serverMessage;
+    char* message_text;
 
     printf("[Lodi Client]: Module Loaded. \n");
     
@@ -195,7 +213,7 @@ int main() {
                     }
                     printf("[Lodi Client]: User: %u, Stamp: %lu, Sig: %lu\n",loginReq.userID, loginReq.timestamp, loginReq.digitalSig);
                     printf("[Lodi Client]: Login details sent.\n");
-
+                    
                     // recv message here
 
                     memset(&responseMsg, 0, sizeof(responseMsg));
@@ -210,6 +228,59 @@ int main() {
                     if (responseMsg.userID == 21) {
                         printf("[Lodi Client]: User denied verification.\nLogin for user %u denied", i);
                     }
+                //todo: implement TCP HERE
+               TCPSock = socket(AF_INET, SOCK_STREAM, 0);
+                if(connect(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer)) < 0){
+                    perror("[Lodi Client]: connect failed");
+                return 0;
+            }
+                while(1){
+                //listen for input here
+                printf("[Lodi Client]: Connected to server\n");
+                printf("Please enter 1 to Login, 2 to post a message, 3 to request an idol feed, 4 to follow an idol, 5 to unfollow an idol, or 6 to logout\n");
+                scanf("%d", &user_Input);
+                if(user_Input == 1){
+                    //just asking for Ack Login,really
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 0;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input == 2){
+                    //todo Post() implementation
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 1;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input == 3){
+                    //todo requesFeed() implementation
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 2;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input ==4){
+                    //todo follow(idol) implementation
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 3;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input==5){
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 4;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input==6){
+                    //todo logout() and quit
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 5;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                    close(TCPSock);
+                    break;
+                }else{
+                    //todo account for invalid input
+                }
+            }
+                
                 }
                 else if (i >= 19) {
                     printf("[Lodi Client]: The username and/or password are incorect.\n");

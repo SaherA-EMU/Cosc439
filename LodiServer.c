@@ -48,6 +48,21 @@ typedef struct{
     unsigned long publicKey;
 } PClientOrLodiServertoPKEServer;
 
+typedef struct{
+    enum{Login, Post, Feed, Follow, Unfollow, Logout}
+        request_Type;                                   //same as an unsigned int
+        unsigned int UserID;                            //unique client identifier
+        unsigned int IdolID;                            //unique client identifier
+        char message[100];                               //text message
+}LodiClientMessage;                                     //an unsigned int is 32 bits = 4 bytes
+
+typedef struct{
+    enum{AckLogin, AckPost, AckFeed, AckFollow, AckUnfollow, AckLogout}
+    message_Type;                                       //same as unsigned int
+    unsigned int IdolID;                                //unique client identifier
+    char message[100];                                  //text message
+}LodiServerMessage;                                     //an unsigned int is 32 bits = 4 bytes
+
 long RSAencrypt(long x, long y) {
     int result = 1;
     for(int i = 0; i < y; i++){
@@ -60,14 +75,17 @@ long RSAencrypt(long x, long y) {
 
 int main(){
     //variable declaration and intialization for PKE
-    int PKESock, lodiSock, TFASock;
-    struct sockaddr_in pkeAddress, serverAddress, clientAddress, TFAAddress;
+    int PKESock, lodiSock, TFASock, TCPSock;
+    struct sockaddr_in pkeAddress, serverAddress, clientAddress, TFAAddress, TCPServer,TCPClient;
     socklen_t clientAddressLength = sizeof(pkeAddress);
     socklen_t pkeAddressLength = sizeof(pkeAddress);
     PClientOrLodiServertoPKEServer requestMsg, PKEKey;
     PKServerToPClientOrLodiClient responseMsg;
     TFAClientOrLodiServerToTFAServer authReq;
     LodiServerToLodiClientAcks loginAuth;
+    LodiClientMessage clientMessage;
+    LodiServerMessage serverMessage;
+    char* AckMessage;
 
     printf("[Lodi Server]: Module Loaded. \n");
   
@@ -142,7 +160,7 @@ int main(){
                 return 1;
             }
 
-            printf("[TFA Server]: Public key requested.\n");
+            printf("[Lodi Server]: Public key requested.\n");
 
             // receive the public key from the PKEServer
             memset(&PKEKey, 0, sizeof(PKEKey));
@@ -194,8 +212,8 @@ int main(){
 
             // set up reqMsg with userID and message type
             memset(&authReq, 0, sizeof(authReq));
-            requestMsg.messageType = requestAuth;
-            requestMsg.userID = responseMsg.userID;
+            authReq.messageType = requestAuth;
+            authReq.userID = responseMsg.userID;
 
             // send user auth to TFAServer
             if (sendto(TFASock, &authReq, sizeof(authReq), 0,
@@ -223,25 +241,87 @@ int main(){
 
             // Case: if ID is a match and TFA Server Verifies.
             if (authReq.userID == responseMsg.userID) {
-                
-                loginAuth.userID == authReq.userID;
+                loginAuth.userID = authReq.userID;
                 printf("[Lodi Server]: Auth Request verified. Logging in.\n");
 
                 if (sendto(lodiSock, &loginAuth, sizeof(loginAuth), 0,
-                    (struct sockaddr *)&clientAddress, sizeof(clientAddress)) != sizeof(clientAddressLength)) {
+                    (struct sockaddr *)&clientAddress, sizeof(clientAddress)) != sizeof(loginAuth)) {
                     perror("Sendto() failed");
                     close(lodiSock);
                     return 1;
                 }
-            }
+                //TCP STARTS HERE
+               memset(&TCPServer, 0, sizeof(TCPServer));
+               TCPServer.sin_family=AF_INET;
+               TCPServer.sin_addr.s_addr=INADDR_ANY;
+               TCPServer.sin_port=htons(7002);
+               TCPSock = socket(AF_INET, SOCK_STREAM, 0);
+               socklen_t TCPServerAddress = sizeof(TCPServer);
+               memset(&TCPClient, 0, sizeof(TCPClient));
+               socklen_t TCPClientLen = sizeof(TCPClient);
+               if(bind(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer)) < 0){
+                    perror("[Lodi Server]: bind failed");
+                    return 0;
+                } 
+                listen(TCPSock, 5);
+                int clientSock = accept(TCPSock,(struct sockaddr *) &TCPClient, &TCPClientLen);
+                if(clientSock<0){
+                    perror("[Lodi Server]: accept error");
+                }
+               while(1){
+                //listen for input here
+
+                int incomingBytes = recv(clientSock, &clientMessage, sizeof(clientMessage), 0);
+                if(incomingBytes <=0){
+                    break;
+                }
+                //filter by message_Type
+                switch (clientMessage.request_Type)
+                {
+                case 0:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Login Acknowledged");
+                    break;
+                case 1:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Post Acknowledged");
+                    break;
+                case 2:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Feed Acknowledged");
+                    break;
+                case 3:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Follow Acknowledged");
+                    break;
+                case 4:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Unfollow Acknowledged");
+                    break;
+                case 5:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Logout Acknowledged");
+                    send(clientSock, &serverMessage, sizeof(serverMessage),0);
+                    break;
+                }
+                    send(clientSock, &serverMessage, sizeof(serverMessage), 0);
+                } //end of innerTCPwhile loop
+                close(clientSock);
+                continue;
             // Case: ID does not currently have TFA set up.
             if (authReq.userID == -1) {
 
-                loginAuth.userID == authReq.userID;
+                loginAuth.userID = authReq.userID;
                 printf("[Lodi Server]: Auth Request denied.\n");
 
                 if (sendto(lodiSock, &loginAuth, sizeof(loginAuth), 0,
-                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(clientAddressLength)) {
+                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(loginAuth)) {
                     perror("Sendto() failed");
                     close(lodiSock);
                     return 1;
@@ -250,11 +330,11 @@ int main(){
             // Case: User denies TFA Verification.
             if (authReq.userID == 20) {
 
-                loginAuth.userID == authReq.userID;
+                loginAuth.userID = authReq.userID;
                 printf("[Lodi Server]: Auth Request denied.\n");
 
                 if (sendto(lodiSock, &loginAuth, sizeof(loginAuth), 0,
-                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(clientAddressLength)) {
+                    (struct sockaddr*)&clientAddress, sizeof(clientAddress)) != sizeof(loginAuth)) {
                     perror("Sendto() failed");
                     close(lodiSock);
                     return 1;

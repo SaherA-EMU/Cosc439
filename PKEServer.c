@@ -93,18 +93,14 @@ int main() {
 
             }
             userCounter++; //increment counter of registered users
+            printf("[PKE Server]: Switch to the TFAClient and authorize this user to continue.\n");
         }
 
         else if (recMessage.messageType == requestKey) {  //handle the case where the user is already registered messageType = 1
-            //keyFinder = 0;
-           // for (int i = 0; i < userCounter; i++) { //iterate up to the number of registered users
-           //     if (users[i].userID == recMessage.userID) {
-           //         keyFinder = users[i].publicKey;
-           //         break;
-           //     }
-           // }
-            //sendMessage.messageType = responsePublicKey;
+            
+            sendMessage.messageType = responsePublicKey;
             memset(&sendMessage, 0, sizeof(sendMessage));
+            sendMessage.messageType = responsePublicKey;
             sendMessage.userID = recMessage.userID;
             sendMessage.publicKey = users[sendMessage.userID].publicKey;
 
@@ -118,6 +114,7 @@ int main() {
             }
         }
     }
+    
     close(sock);
     return 0;
 }
