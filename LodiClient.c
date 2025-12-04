@@ -229,17 +229,13 @@ int main() {
                         printf("[Lodi Client]: User denied verification.\nLogin for user %u denied", i);
                     }
                 //todo: implement TCP HERE
-                int counter=0;
-               memset(&TCPServer, 0, sizeof(TCPServer));
-               TCPServer.sin_family=AF_INET;
-               TCPServer.sin_addr.s_addr=INADDR_ANY;
-               TCPServer.sin_port=htons(7002);
                TCPSock = socket(AF_INET, SOCK_STREAM, 0);
-               socklen_t TCPServerAddress = sizeof(TCPServer);
-                while(counter!=0){
+                if(connect(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer)) < 0){
+                    perror("[Lodi Client]: connect failed");
+                return 0;
+            }
+                while(1){
                 //listen for input here
-                if(connect(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer))<  0){
-                //if logged in
                 printf("[Lodi Client]: Connected to server\n");
                 printf("Please enter 1 to Login, 2 to post a message, 3 to request an idol feed, 4 to follow an idol, 5 to unfollow an idol, or 6 to logout\n");
                 scanf("%d", &user_Input);
@@ -248,42 +244,43 @@ int main() {
                     memset(&clientMessage, 0, sizeof(clientMessage));
                     clientMessage.request_Type = 0;
                     send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                }
-                if(user_Input == 2){
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input == 2){
                     //todo Post() implementation
                     memset(&clientMessage, 0, sizeof(clientMessage));
                     clientMessage.request_Type = 1;
                     send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                }
-                if(user_Input == 3){
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input == 3){
                     //todo requesFeed() implementation
                     memset(&clientMessage, 0, sizeof(clientMessage));
                     clientMessage.request_Type = 2;
                     send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                }
-                if(user_Input ==4){
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input ==4){
                     //todo follow(idol) implementation
                     memset(&clientMessage, 0, sizeof(clientMessage));
                     clientMessage.request_Type = 3;
                     send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                }
-                if(user_Input==5){
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input==5){
                     memset(&clientMessage, 0, sizeof(clientMessage));
                     clientMessage.request_Type = 4;
                     send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                }
-                if(user_Input==6){
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                }else if(user_Input==6){
                     //todo logout() and quit
                     memset(&clientMessage, 0, sizeof(clientMessage));
                     clientMessage.request_Type = 5;
                     send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                    counter++;
-                }
-                else{
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                    close(TCPSock);
+                    break;
+                }else{
                     //todo account for invalid input
                 }
             }
-            }
+                
                 }
                 else if (i >= 19) {
                     printf("[Lodi Client]: The username and/or password are incorect.\n");

@@ -76,7 +76,7 @@ long RSAencrypt(long x, long y) {
 int main(){
     //variable declaration and intialization for PKE
     int PKESock, lodiSock, TFASock, TCPSock;
-    struct sockaddr_in pkeAddress, serverAddress, clientAddress, TFAAddress, TCPServer;
+    struct sockaddr_in pkeAddress, serverAddress, clientAddress, TFAAddress, TCPServer,TCPClient;
     socklen_t clientAddressLength = sizeof(pkeAddress);
     socklen_t pkeAddressLength = sizeof(pkeAddress);
     PClientOrLodiServertoPKEServer requestMsg, PKEKey;
@@ -251,82 +251,71 @@ int main(){
                     return 1;
                 }
                 //TCP STARTS HERE
-               int counter=0;
                memset(&TCPServer, 0, sizeof(TCPServer));
                TCPServer.sin_family=AF_INET;
                TCPServer.sin_addr.s_addr=INADDR_ANY;
                TCPServer.sin_port=htons(7002);
                TCPSock = socket(AF_INET, SOCK_STREAM, 0);
                socklen_t TCPServerAddress = sizeof(TCPServer);
-                while(counter!=0){
-                //listen for input here
-                if(bind(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer))< 0){
+               memset(&TCPClient, 0, sizeof(TCPClient));
+               socklen_t TCPClientLen = sizeof(TCPClient);
+               if(bind(TCPSock,(struct sockaddr *) &TCPServer, sizeof(TCPServer)) < 0){
+                    perror("[Lodi Server]: bind failed");
+                    return 0;
+                } 
                 listen(TCPSock, 5);
+        while(1){
+                int clientSock = accept(TCPSock,(struct sockaddr *) &TCPClient, &TCPClientLen);
+                if(clientSock<0){
+                    perror("[Lodi Server]: accept error");
                 }
-                accept(TCPSock,(struct sockaddr *) &TCPServer, &TCPServerAddress);
-                recv(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+               while(1){
+                //listen for input here
+
+                int incomingBytes = recv(clientSock, &clientMessage, sizeof(clientMessage), 0);
+                if(incomingBytes <=0){
+                    break;
+                }
                 //filter by message_Type
-                if(clientMessage.request_Type == 0){
-                //Send Ack login
-                memset(&serverMessage, 0, sizeof(serverMessage));
-                serverMessage.message_Type = clientMessage.request_Type;
-                serverMessage.IdolID = clientMessage.IdolID;
-                AckMessage = "[LodiServer]: Login Acknowledged";
-                strcpy(serverMessage.message, AckMessage);
-                send(TCPSock,&serverMessage,sizeof(serverMessage), 0);
+                switch (clientMessage.request_Type)
+                {
+                case 0:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Login Acknowledged");
+                    break;
+                case 1:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Post Acknowledged");
+                    break;
+                case 2:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Feed Acknowledged");
+                    break;
+                case 3:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Follow Acknowledged");
+                    break;
+                case 4:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Unfollow Acknowledged");
+                    break;
+                case 5:
+                    memset(&serverMessage, 0, sizeof(serverMessage));
+                    serverMessage.message_Type = clientMessage.request_Type;
+                    strcpy(serverMessage.message, "[Lodi Server]: Logout Acknowledged");
+                    send(clientSock, &serverMessage, sizeof(serverMessage),0);
+                    break;
                 }
-                if(clientMessage.request_Type == 1){
-                //Send Ack Post
-                memset(&serverMessage, 0, sizeof(serverMessage));
-                serverMessage.message_Type = clientMessage.request_Type;
-                serverMessage.IdolID = clientMessage.IdolID;
-                AckMessage = "[LodiServer]: Post Acknowledged";
-                strcpy(serverMessage.message, AckMessage);
-                send(TCPSock,&serverMessage,sizeof(serverMessage), 0);
-                }
-
-                if(clientMessage.request_Type == 2){
-                //Send Ack Feed
-                memset(&serverMessage, 0, sizeof(serverMessage));
-                serverMessage.message_Type = clientMessage.request_Type;
-                serverMessage.IdolID = clientMessage.IdolID;
-                AckMessage = "[LodiServer]: Feed Acknowledged";
-                strcpy(serverMessage.message, AckMessage);
-                send(TCPSock,&serverMessage,sizeof(serverMessage), 0);
-                }
-
-                if(clientMessage.request_Type == 3){
-                //Send Ack Follow
-                memset(&serverMessage, 0, sizeof(serverMessage));
-                serverMessage.message_Type = clientMessage.request_Type;
-                serverMessage.IdolID = clientMessage.IdolID;
-                AckMessage = "[LodiServer]: Follow Acknowledged";
-                strcpy(serverMessage.message, AckMessage);
-                send(TCPSock,&serverMessage,sizeof(serverMessage), 0);
-                }
-
-                if(clientMessage.request_Type == 4){
-                //Send Unfollow
-                memset(&serverMessage, 0, sizeof(serverMessage));
-                serverMessage.message_Type = clientMessage.request_Type;
-                serverMessage.IdolID = clientMessage.IdolID;
-                AckMessage = "[LodiServer]: Unfollow Acknowledged";
-                strcpy(serverMessage.message, AckMessage);
-                send(TCPSock,&serverMessage,sizeof(serverMessage), 0);
-                }
-
-                if(clientMessage.request_Type == 5){
-                //logout message here and send AckLogout
-                memset(&serverMessage, 0, sizeof(serverMessage));
-                serverMessage.message_Type = clientMessage.request_Type;
-                serverMessage.IdolID = clientMessage.IdolID;
-                AckMessage = "[LodiServer]: Logout Acknowledged";
-                strcpy(serverMessage.message, AckMessage);
-                send(TCPSock,&serverMessage,sizeof(serverMessage), 0);
-                counter++;
-                }
-                } //end of while loop
-            }
+                    send(clientSock, &serverMessage, sizeof(serverMessage), 0);
+                } //end of innerTCPwhile loop
+                close(clientSock);
+                continue;
+            }//end of outerTCP while loop
             // Case: ID does not currently have TFA set up.
             if (authReq.userID == -1) {
 
