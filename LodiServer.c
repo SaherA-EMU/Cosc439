@@ -112,6 +112,15 @@ typedef struct
     char message[100];   // text message
 } IdolPosts;
 
+// use the follow list of an account to give the feed off all followed idols
+typedef struct {
+    IdolPosts Posts[10];
+    unsigned int postIndex;
+    unsigned int followList[20];
+    unsigned int followIndex[20];
+} Account;
+
+
 long RSAencrypt(long x, long y) {
     int result = 1;
     for (int i = 0; i < y; i++)
@@ -137,23 +146,17 @@ int main(int argc, char *argv[]) {
     char *AckMessage;
 
     // Tracker for posts
-    IdolPosts Posts[100];
-    memset(&Posts, 0, sizeof(Posts));
-    int postIndex = 3;
-
-    // Tracking followed idols - not a realistic way to implement tbh.
-    int followList[20][20];
+    Account Idols[20];
+    memset(&Idols, 0, sizeof(Idols));
+    printf("PIndex:%u, FIndex:%u",Idols[0].postIndex,Idols[0].followIndex);
 
     // Prepoulate follow list and posts
-    followList[0][0] = 18;
-    followList[0][1] = 19;
-    followList[1][0] = 19;
-    strcpy(Posts[0].message, "bye now");
-    Posts[0].IdolID = 18;
-    strcpy(Posts[1].message, "Worldly");
-    Posts[1].IdolID = 19;
-    strcpy(Posts[2].message, "Sick man!");
-    Posts[2].IdolID = 19;
+    Idols[0].followList[18] = 1;
+    Idols[0].followList[19] = 1;
+    Idols[1].followList[19] = 1;
+    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "bye now");
+    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "wordly");
+    strcpy(Idols[19].Posts[Idols[19].postIndex++].message, "Sick man!");
 
     printf("[Lodi Server]: Module Loaded. \n");
 
@@ -385,10 +388,12 @@ int main(int argc, char *argv[]) {
                     case 1: // post ack
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
-                        
-                        Posts[postIndex].IdolID = clientMessage.UserID;
-                        strcpy(Posts[postIndex].message,clientMessage.message);
-                        printf("[Lodi Server]: %s\n",Posts[postIndex].message);
+
+                        // Make setting ID/Index Easy
+                        int ID = serverMessage.IdolID;
+                        int Index = Idols[ID].postIndex;
+                        strcpy(Idols[ID].Posts[Index].message, clientMessage.message);
+                        printf("[Lodi Server]: %s\n",Idols[ID].Posts[Index].message,clientMessage.message);
 
                         strcpy(serverMessage.message, "Server: Post Acknowledged");
                         break;
