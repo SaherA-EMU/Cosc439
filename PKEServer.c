@@ -26,7 +26,7 @@ typedef struct {
 } RegisteredUser;
 
 
-int main() {
+int main(int argc, char *argv[]) {
     // variable declaration and initialization
     struct sockaddr_in serverAddress, clientAddress;
     PClientOrLodiServertoPKEServer recMessage;
@@ -39,6 +39,14 @@ int main() {
 
 
     printf("[PKE Server] module loaded.\n");
+
+    //easy port shift
+    int n = 0;
+    if (argc >= 2) {
+         n = atoi(argv[1]);
+         printf("n: %u", n);
+    }
+
     // Check  if socket is made
     if (sock < 0) {
         perror("Socket() failed");
@@ -48,7 +56,7 @@ int main() {
     memset(&serverAddress, 0, sizeof(serverAddress));
     serverAddress.sin_family = AF_INET;
     serverAddress.sin_addr.s_addr = htonl(INADDR_ANY);
-    serverAddress.sin_port = htons(5060); //I picked this at random
+    serverAddress.sin_port = htons(5060 + n); //I picked this at random
 
     // Bind socket
     if (bind(sock, (struct sockaddr*)&serverAddress, sizeof(serverAddress)) < 0) {

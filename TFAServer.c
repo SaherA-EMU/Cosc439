@@ -47,22 +47,12 @@ typedef struct {
 
 // RSA encryption, works for any power mod function assuming the given N is 299.
 long RSAencrypt(long x, long y) {
-    int result = x;
-    int mod4 = (x * x * x * x) % 299;
-    result = mod4 * mod4;
-    result = result % 299;
-    while (y > 11) {
-        result = result * mod4;
+    int result = 1;
+    for (int i = 0; i < y; i++)
+    {
+        result = result * x;
         result = result % 299;
-        y = y - 4;
     }
-    int finish = 1;
-    for (int i = 0; i < y - 8; i++) {
-        finish = finish * x;
-    }
-    finish = finish % 299;
-    result = result * finish;
-    result = result % 299;
     return result;
 }
 
@@ -75,6 +65,12 @@ int main(int argc, char *argv[]) {
 // Initialize server
     printf("[TFAServer] module loaded.\n");
 
+    //easy port shift
+    int n = 0;
+    if (argc >= 2) {
+         n = atoi(argv[1]);
+         printf("n: %u", n);
+    }
     //initialize the list of authorized users
     for (int i = 0; i < 20; i++) {
         authorized[i].stat = 0;
@@ -97,13 +93,13 @@ int main(int argc, char *argv[]) {
     memset(&serverAddr, 0, sizeof(serverAddr));
     serverAddr.sin_family = AF_INET;                /* IPv4*/
     serverAddr.sin_addr.s_addr = htonl(INADDR_ANY); /* Any incoming connection*/
-    serverAddr.sin_port = htons(7000);        /* convert host to network short(Local port) */
+    serverAddr.sin_port = htons(7000 + n);        /* convert host to network short(Local port) */
 // Bind, listen, and receive
     if (bind(serverSock, (struct sockaddr *) &serverAddr, sizeof(serverAddr)) < 0) {
         perror("Bind() failed");
         exit(1);
     }
-    printf("[TFA Server]: Listening on port 7000\n");
+    printf("[TFA Server]: Listening on port 7000.\n");
 
     while(1) { // Server does not close.
 
@@ -141,7 +137,7 @@ int main(int argc, char *argv[]) {
             PserverAddr.sin_family = AF_INET;
             //PserverAddr.sin_addr.s_addr = inet_addr(IPAddress);
             PserverAddr.sin_addr.s_addr = INADDR_ANY;
-            PserverAddr.sin_port = htons(5060);
+            PserverAddr.sin_port = htons(5060 + n);
             printf("[TFA Server]: serverAddr configured.\n");
 
             /*if (bind(PKEsock, (struct sockaddr*)&PserverAddr, sizeof(PserverAddr)) < 0) {

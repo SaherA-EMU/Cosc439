@@ -36,8 +36,15 @@ long RSAencrypt(long x, long y) {
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
     printf("[TFA Client] module loaded.\n");
+
+    //easy port shift
+    int n = 0;
+    if (argc >= 2) {
+         n = atoi(argv[1]);
+         printf("n: %u", n);
+    }
 
     struct sockaddr_in serverAddr;
 
@@ -56,7 +63,7 @@ int main() {
     serverAddr.sin_family = AF_INET;
     //serverAddr.sin_addr.s_addr = inet_addr(IPAddress);
     serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(7000);
+    serverAddr.sin_port = htons(7000 + n);
     printf("[TFA Client]: serverAddr configured.\n");
 
     // Connect to server
