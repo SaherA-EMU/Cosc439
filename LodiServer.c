@@ -72,6 +72,7 @@ typedef struct
     unsigned long publicKey;
 } PClientOrLodiServertoPKEServer;
 
+// Message from Lodi Client
 typedef struct
 {
     enum
@@ -88,6 +89,7 @@ typedef struct
     char message[100];   // text message
 } LodiClientMessage;     // an unsigned int is 32 bits = 4 bytes
 
+// Message from Lodi Server
 typedef struct
 {
     enum
@@ -102,6 +104,13 @@ typedef struct
     unsigned int IdolID; // unique client identifier
     char message[100];   // text message
 } LodiServerMessage;     // an unsigned int is 32 bits = 4 bytes
+
+// Posts from idols, with an IdolID.
+typedef struct
+{
+    unsigned int IdolID; // unique client identifier
+    char message[100];   // text message
+} IdolPosts;
 
 long RSAencrypt(long x, long y) {
     int result = 1;
@@ -126,6 +135,25 @@ int main(int argc, char *argv[]) {
     LodiClientMessage clientMessage;
     LodiServerMessage serverMessage;
     char *AckMessage;
+
+    // Tracker for posts
+    IdolPosts Posts[100];
+    memset(&Posts, 0, sizeof(Posts));
+    int postIndex = 3;
+
+    // Tracking followed idols - not a realistic way to implement tbh.
+    int followList[20][20];
+
+    // Prepoulate follow list and posts
+    followList[0][0] = 18;
+    followList[0][1] = 19;
+    followList[1][0] = 19;
+    strcpy(Posts[0].message, "bye now");
+    Posts[0].IdolID = 18;
+    strcpy(Posts[1].message, "Worldly");
+    Posts[1].IdolID = 19;
+    strcpy(Posts[2].message, "Sick man!");
+    Posts[2].IdolID = 19;
 
     printf("[Lodi Server]: Module Loaded. \n");
 
@@ -310,20 +338,17 @@ int main(int argc, char *argv[]) {
                     close(lodiSock);
                     return 1;
                 }
-                printf("Check 1");
+                
                 // An accepted login will start a TCP connection with the LodiClient.
                 // TCP STARTS HERE * TCP Socket set up.
                 memset(&TCPServer, 0, sizeof(TCPServer));
                 TCPServer.sin_family = AF_INET;
-                printf("Check 2");
                 TCPServer.sin_addr.s_addr = INADDR_ANY;
                 TCPServer.sin_port = htons(7040 + n);
                 TCPSock = socket(AF_INET, SOCK_STREAM, 0);
                 // socklen_t TCPServerAddress = sizeof(TCPServer);
-                printf("Check 3");
                 memset(&TCPClient, 0, sizeof(TCPClient));
                 socklen_t TCPClientLen = sizeof(TCPClient);
-                printf("Check 4");
 
                 // binding the socket
                 if (bind(TCPSock, (struct sockaddr *)&TCPServer, sizeof(TCPServer)) < 0)
@@ -331,24 +356,20 @@ int main(int argc, char *argv[]) {
                     perror("[Lodi Server]: bind failed");
                     return 0;
                 }
-                printf("Check 5");
 
                 // listen for connections from the lodiClient.
                 listen(TCPSock, 5);
-                printf("Check 6");
                 int clientSock = accept(TCPSock, (struct sockaddr *)&TCPClient, &TCPClientLen);
                 if (clientSock < 0)
                 {
                     perror("[Lodi Server]: accept error");
                 }
-                printf("Check 7");
                 while (1)
                 { // listen for input here
-                    printf("[Lodi Server]: Listening for commands.");
+                    printf("[Lodi Server]: Listening for commands.\n");
                     
 
                     int incomingBytes = recv(clientSock, &clientMessage, sizeof(clientMessage), 0);
-                    printf("Check 8");
                     if (incomingBytes <= 0)
                     {
                         break;
@@ -356,19 +377,37 @@ int main(int argc, char *argv[]) {
                     // filter by message_Type
                     switch (clientMessage.request_Type)
                     {
-                    case 0:
+                    case 0: // login ack
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
                         strcpy(serverMessage.message, "Server: Login Acknowledged");
                         break;
-                    case 1:
+                    case 1: // post ack
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
+                        
+                        Posts[postIndex].IdolID = clientMessage.UserID;
+                        strcpy(Posts[postIndex].message,clientMessage.message);
+                        printf("[Lodi Server]: %s\n",Posts[postIndex].message);
+
                         strcpy(serverMessage.message, "Server: Post Acknowledged");
                         break;
-                    case 2:
+                    case 2: // feed ack
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
+
+                        for(int p; p < postIndex; p++){ //loop all posts
+                            for(int fl; fl < 20; fl++){ //check follow list
+                                if(followList[clientMessage.UserID][fl] = Posts[p].IdolID){
+                                    strcpy(serverMessage.message, Posts[p].message);
+                                    memset(&serverMessage, 0, sizeof(serverMessage));
+                                    serverMessage.IdolID = Posts[p].IdolID;
+                                    send(clientSock, &serverMessage, sizeof(serverMessage), 0);
+                                    fl = fl + 20;
+                                }
+                            }
+                        }
+                        serverMessage.IdolID = 20;
                         strcpy(serverMessage.message, "Server: Feed Acknowledged");
                         break;
                     case 3:

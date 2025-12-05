@@ -9,9 +9,9 @@
 
 // NOTE: this doesnt handle powers of y below 8, which is a bit of an oversight. Too late to fix directly so keys adjusted.
 // privateKey to encrypt on login
-long privateKeys[20] = {13,  17,  19, 23,  25,  29,  31, 35,  37,  41, 43,  47, 49,  59, 67,  71,  73,  79,  85, 89};
+long privateKeys[20] = {13, 17, 19, 23, 25, 29, 31, 35, 37, 41, 43, 47, 49, 59, 67, 71, 73, 79, 85, 89};
 // send the associated public key when registering the key with the PKEServer.
-long publicKeys[20] =  {61, 233, 139, 23, 169, 173, 247, 83, 157, 161, 43, 191, 97, 179, 67, 119, 217, 127, 205, 89};
+long publicKeys[20] = {61, 233, 139, 23, 169, 173, 247, 83, 157, 161, 43, 191, 97, 179, 67, 119, 217, 127, 205, 89};
 
 typedef struct
 {
@@ -57,6 +57,7 @@ typedef struct
     unsigned long digitalSig;
 } PKServerToPClientOrLodiClient;
 
+// Message from Lodi Client
 typedef struct
 {
     enum
@@ -73,6 +74,7 @@ typedef struct
     char message[100];   // text message
 } LodiClientMessage;     // an unsigned int is 32 bits = 4 bytes
 
+// Message from Lodi Server
 typedef struct
 {
     enum
@@ -89,7 +91,8 @@ typedef struct
 } LodiServerMessage;     // an unsigned int is 32 bits = 4 bytes
 
 // RSA encryption, works for any power mod function assuming the given N is 299.
-long RSAencrypt(long x, long y) {
+long RSAencrypt(long x, long y)
+{
     int result = 1;
     for (int i = 0; i < y; i++)
     {
@@ -99,7 +102,8 @@ long RSAencrypt(long x, long y) {
     return result;
 }
 
-int main(int argc, char *argv[]) {
+int main(int argc, char *argv[])
+{
     // variable declaration and intialization for PKE
     int sock_PKE, sock_Lodi, TCPSock, user_Input;
     struct sockaddr_in pkeAddress, LodiAddress, TCPServer;
@@ -114,11 +118,12 @@ int main(int argc, char *argv[]) {
 
     printf("[Lodi Client]: Module Loaded. \n");
 
-    //easy port shift
+    // easy port shift
     int n = 0;
-    if (argc >= 2) {
-         n = atoi(argv[1]);
-         printf("n: %u", n);
+    if (argc >= 2)
+    {
+        n = atoi(argv[1]);
+        printf("n: %u", n);
     }
 
     bool cont = true;
@@ -261,7 +266,7 @@ int main(int argc, char *argv[]) {
                     memset(&responseMsg, 0, sizeof(responseMsg));
                     ssize_t recvLength = recvfrom(sock_PKE, &responseMsg, sizeof(responseMsg), 0, (struct sockaddr *)&LodiAddress, &LodiAddressLength);
 
-                    printf("[Lodi Client]: Auth ID: %u", responseMsg.userID);
+                    printf("[Lodi Client]: Auth ID: %u\n", responseMsg.userID);
                     if (responseMsg.userID == -1)
                     {
                         printf("[Lodi Client]: Login for user %u denied.\n", i);
@@ -285,40 +290,57 @@ int main(int argc, char *argv[]) {
                         return 0;
                     }
 
+                    // login ack
+                    printf("----------------------------------\n");
+                        // just asking for Ack Login,really - automated login
+                        memset(&clientMessage, 0, sizeof(clientMessage));
+                        clientMessage.request_Type = 0;
+                        send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                        recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                        printf("[Lodi Client]: %s\n", serverMessage.message);
+
+                        printf("[Lodi Client]: Connected to server\n");
+
                     i = 20;
                     while (1)
                     {
                         // listen for input here
                         printf("----------------------------------\n");
-                        printf("[Lodi Client]: Connected to server\n");
-                        printf("Please enter 1 to Login, 2 to post a message, 3 to request an idol feed, 4 to follow an idol, 5 to unfollow an idol, or 6 to logout\n");
+                        printf("Please enter 1 to post a message, 2 to request an idol feed, 3 to follow an idol, 4 to unfollow an idol, or 5 to logout\n");
                         scanf("%d", &user_Input);
+
                         if (user_Input == 1)
-                        {
-                            // just asking for Ack Login,really
-                            memset(&clientMessage, 0, sizeof(clientMessage));
-                            clientMessage.request_Type = 0;
-                            send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                            recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
-                            printf("[Lodi Client]: %s\n", serverMessage.message);
-                        }
-                        else if (user_Input == 2)
                         {
                             // todo Post() implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
                             clientMessage.request_Type = 1;
+                            clientMessage.UserID = i;
+                            
+                            printf("[Lodi Client]: Please enter a message to post: \n");
+                            //Enter Eats the first fgets
+                            fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
+                            fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
+
+                            //send request, receive ack
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                         }
-                        else if (user_Input == 3)
+                        else if (user_Input == 2)
                         {
                             // todo requesFeed() implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
                             clientMessage.request_Type = 2;
+                            clientMessage.UserID = i;
+
+                            //send request, receive all posts for followed users.
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                            recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                            while(serverMessage.IdolID < 20){
+                                recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                                printf("[Lodi Client]: (%s) :-: %s\n", Names[serverMessage.IdolID], serverMessage.message);
+                            }
+                            serverMessage.IdolID = 0;
                         }
-                        else if (user_Input == 4)
+                        else if (user_Input == 3)
                         {
                             // todo follow(idol) implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
@@ -326,14 +348,14 @@ int main(int argc, char *argv[]) {
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                         }
-                        else if (user_Input == 5)
+                        else if (user_Input == 4)
                         {
                             memset(&clientMessage, 0, sizeof(clientMessage));
                             clientMessage.request_Type = 4;
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                         }
-                        else if (user_Input == 6)
+                        else if (user_Input == 5)
                         {
                             // todo logout() and quit
                             memset(&clientMessage, 0, sizeof(clientMessage));
