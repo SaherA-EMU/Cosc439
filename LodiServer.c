@@ -390,8 +390,9 @@ int main(int argc, char *argv[]) {
                         serverMessage.message_Type = clientMessage.request_Type;
 
                         // Make setting ID/Index Easy
-                        int ID = serverMessage.IdolID;
+                        int ID = clientMessage.IdolID;
                         int Index = Idols[ID].postIndex;
+                        Idols[ID].postIndex++; // increment post index for next post
                         strcpy(Idols[ID].Posts[Index].message, clientMessage.message);
                         printf("[Lodi Server]: %s\n",Idols[ID].Posts[Index].message,clientMessage.message);
 
@@ -401,28 +402,34 @@ int main(int argc, char *argv[]) {
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
 
-                        for(int p; p < postIndex; p++){ //loop all posts
-                            for(int fl; fl < 20; fl++){ //check follow list
-                                if(followList[clientMessage.UserID][fl] = Posts[p].IdolID){
-                                    strcpy(serverMessage.message, Posts[p].message);
+                        for(int idol = 0; idol < 20; idol++){ //loop all idols
+                            if(Idols[clientMessage.UserID].followList[idol] == 1){ //check if followed
+                                for(int fl=0; fl < Idols[idol].postIndex; fl++){ //send all posts from followed idol
                                     memset(&serverMessage, 0, sizeof(serverMessage));
-                                    serverMessage.IdolID = Posts[p].IdolID;
+                                    serverMessage.message_Type = AckFeed;
+                                    serverMessage.IdolID = idol;
+                                    strcpy(serverMessage.message, Idols[idol].Posts[fl].message);
                                     send(clientSock, &serverMessage, sizeof(serverMessage), 0);
-                                    fl = fl + 20;
                                 }
                             }
                         }
+
+                        memset(&serverMessage, 0, sizeof(serverMessage));
+                        serverMessage.message_Type = AckFeed;
                         serverMessage.IdolID = 20;
                         strcpy(serverMessage.message, "Server: Feed Acknowledged");
                         break;
                     case 3:
                         memset(&serverMessage, 0, sizeof(serverMessage));
-                        serverMessage.message_Type = clientMessage.request_Type;
+                        serverMessage.message_Type = AckFollow;
+                        Idols[clientMessage.UserID].followList[clientMessage.IdolID] = 1; // add to follow list
+                        printf("[Lodi Server]: User %u followed Idol %u.\n", clientMessage.UserID, clientMessage.IdolID);
                         strcpy(serverMessage.message, "Server: Follow Acknowledged");
                         break;
                     case 4:
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
+                        Idols[clientMessage.UserID].followList[clientMessage.IdolID] = 0; // remove from follow list
                         strcpy(serverMessage.message, "Server: Unfollow Acknowledged");
                         break;
                     case 5:
