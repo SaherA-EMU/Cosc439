@@ -390,11 +390,11 @@ int main(int argc, char *argv[]) {
                         serverMessage.message_Type = clientMessage.request_Type;
 
                         // Make setting ID/Index Easy
-                        int ID = clientMessage.IdolID;
+                        int ID = clientMessage.UserID;
                         int Index = Idols[ID].postIndex;
                         Idols[ID].postIndex++; // increment post index for next post
                         strcpy(Idols[ID].Posts[Index].message, clientMessage.message);
-                        printf("[Lodi Server]: %s\n",Idols[ID].Posts[Index].message,clientMessage.message);
+                        printf("[Lodi Server]: User%u posted: %s\n",ID, Idols[ID].Posts[Index].message);
 
                         strcpy(serverMessage.message, "Server: Post Acknowledged");
                         break;
@@ -428,8 +428,9 @@ int main(int argc, char *argv[]) {
                         break;
                     case 4:
                         memset(&serverMessage, 0, sizeof(serverMessage));
-                        serverMessage.message_Type = clientMessage.request_Type;
+                        serverMessage.message_Type = AckUnfollow;
                         Idols[clientMessage.UserID].followList[clientMessage.IdolID] = 0; // remove from follow list
+                        printf("[Lodi Server]: User %u unfollowed Idol %u.\n", clientMessage.UserID, clientMessage.IdolID);
                         strcpy(serverMessage.message, "Server: Unfollow Acknowledged");
                         break;
                     case 5:

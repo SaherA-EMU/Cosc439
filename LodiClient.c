@@ -279,6 +279,9 @@ int main(int argc, char *argv[])
                     {
                         printf("[Lodi Client]: User denied verification.\nLogin for user %u denied", i);
                     }
+
+                    int loggedInUserID = i; //just saving the user id for later use 
+                    i = 20;
                     // todo: implement TCP HERE
                     TCPSock = socket(AF_INET, SOCK_STREAM, 0);
                     TCPServer.sin_family = AF_INET;
@@ -294,14 +297,15 @@ int main(int argc, char *argv[])
                     printf("----------------------------------\n");
                         // just asking for Ack Login,really - automated login
                         memset(&clientMessage, 0, sizeof(clientMessage));
+                        clientMessage.UserID = loggedInUserID;
                         clientMessage.request_Type = 0;
                         send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                         recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                         printf("[Lodi Client]: %s\n", serverMessage.message);
 
                         printf("[Lodi Client]: Connected to server\n");
+                    
 
-                    i = 20;
                     while (1)
                     {
                         // listen for input here
@@ -314,60 +318,89 @@ int main(int argc, char *argv[])
                             // todo Post() implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
                             clientMessage.request_Type = 1;
-                            clientMessage.UserID = i;
+                            clientMessage.UserID = loggedInUserID;
                             
                             printf("[Lodi Client]: Please enter a message to post: \n");
                             //Enter Eats the first fgets
                             fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
                             fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
 
+                            clientMessage.message[strcspn(clientMessage.message, "\n")] = 0; //remove newline char
+
                             //send request, receive ack
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                            printf("[Lodi Client]: %s\n", serverMessage.message);
                         }
                         else if (user_Input == 2)
                         {
                             // todo requesFeed() implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
-                            clientMessage.request_Type = 2;
-                            clientMessage.UserID = i;
+                            clientMessage.request_Type = Feed;
+                            clientMessage.UserID = loggedInUserID;
 
                             //send request, receive all posts for followed users.
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                            while(serverMessage.IdolID < 20){
+                            while(1){
                                 recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
-                                printf("[Lodi Client]: (%s) :-: %s\n", Names[serverMessage.IdolID], serverMessage.message);
+                                if(serverMessage.IdolID == 20){
+                                    printf("[Lodi Client]: %s\n", serverMessage.message);
+                                    break;
+                                }
+                                printf("[Lodi Client]: (%s) :-: %s\n", Names[serverMessage.IdolID].name, serverMessage.message);
                             }
                             serverMessage.IdolID = 0;
                         }
                         else if (user_Input == 3)
                         {
+                            int idolIDToFollow;
+                            printf("[Lodi Client]: Please enter the Idol ID to follow (0-19): \n");
+                            scanf("%d", &idolIDToFollow);
+                            
+
                             // todo follow(idol) implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
-                            clientMessage.request_Type = 3;
+                            clientMessage.request_Type = Follow;
+                            clientMessage.UserID = loggedInUserID;
+                            clientMessage.IdolID = idolIDToFollow;
+
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                            printf("[Lodi Client]: %s\n", serverMessage.message);
+
                         }
                         else if (user_Input == 4)
                         {
+                            int idolIDToUnfollow;
+                            printf("[Lodi Client]: Please enter the Idol ID to unfollow (0-19): \n");
+                            scanf("%d", &idolIDToUnfollow);
+
                             memset(&clientMessage, 0, sizeof(clientMessage));
-                            clientMessage.request_Type = 4;
+                            clientMessage.request_Type = Unfollow;
+                            clientMessage.UserID = loggedInUserID;
+                            clientMessage.IdolID = idolIDToUnfollow;
+
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                            printf("[Lodi Client]: %s\n", serverMessage.message);
                         }
                         else if (user_Input == 5)
                         {
                             // todo logout() and quit
                             memset(&clientMessage, 0, sizeof(clientMessage));
-                            clientMessage.request_Type = 5;
+                            clientMessage.request_Type = Logout;
+                            clientMessage.UserID = loggedInUserID;
+
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                            printf("[Lodi Client]: %s\n", serverMessage.message);
                             close(TCPSock);
                             break;
                         }
                         else
                         {
                             // todo account for invalid input
+                            printf("[Lodi Client]: Invalid input, please try again.\n");
                         }
                     }
                 }
