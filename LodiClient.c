@@ -116,6 +116,14 @@ int main(int argc, char *argv[])
     LodiServerMessage serverMessage;
     char *message_text;
 
+    // prepopulate Names
+    strcpy(Names[17].name, "Steve");
+    strcpy(Pass[17].name, "Irwin");
+    strcpy(Names[18].name, "Fred");
+    strcpy(Pass[18].name, "Rogers");
+    strcpy(Names[19].name, "Bob");
+    strcpy(Pass[19].name, "Ross");
+
     printf("[Lodi Client]: Module Loaded. \n");
 
     // easy port shift
@@ -292,14 +300,15 @@ int main(int argc, char *argv[])
 
                     // login ack
                     printf("----------------------------------\n");
-                        // just asking for Ack Login,really - automated login
-                        memset(&clientMessage, 0, sizeof(clientMessage));
-                        clientMessage.request_Type = 0;
-                        send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                        recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
-                        printf("[Lodi Client]: %s\n", serverMessage.message);
+                    // just asking for Ack Login, really - automated login
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.request_Type = 0;
 
-                        printf("[Lodi Client]: Connected to server\n");
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                    printf("[Lodi Client]: %s\n", serverMessage.message);
+
+                    printf("[Lodi Client]: Connected to server\n");
 
                     i = 20;
                     while (1)
@@ -315,13 +324,13 @@ int main(int argc, char *argv[])
                             memset(&clientMessage, 0, sizeof(clientMessage));
                             clientMessage.request_Type = 1;
                             clientMessage.UserID = i;
-                            
+
                             printf("[Lodi Client]: Please enter a message to post: \n");
-                            //Enter Eats the first fgets
+                            // Enter Eats the first fgets
                             fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
                             fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
 
-                            //send request, receive ack
+                            // send request, receive ack
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                         }
@@ -332,19 +341,58 @@ int main(int argc, char *argv[])
                             clientMessage.request_Type = 2;
                             clientMessage.UserID = i;
 
-                            //send request, receive all posts for followed users.
+                            // send request, receive all posts for followed users.
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                            while(serverMessage.IdolID < 20){
+                            printf("-----------------------------------\n");
+                            while (serverMessage.IdolID < 20)
+                            {
                                 recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
-                                printf("[Lodi Client]: (%s) :-: %s\n", Names[serverMessage.IdolID], serverMessage.message);
+                                if (serverMessage.IdolID == 20)
+                                {
+                                    printf("[Lodi Client]: %s", serverMessage.message);
+                                    printf("-----------------------------------\n");
+                                }
+                                else
+                                {
+                                    printf("[Lodi Client]: (%s %s) :-: %s\n", Names[serverMessage.IdolID].name, Pass[serverMessage.IdolID].name, serverMessage.message);
+                                }
                             }
+                            printf("-----------------------------------\n");
                             serverMessage.IdolID = 0;
                         }
                         else if (user_Input == 3)
                         {
-                            // todo follow(idol) implementation
+                            /* todo follow(idol) implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
                             clientMessage.request_Type = 3;
+
+                            clientMessage.UserID = i;
+                            send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                            //find all users that exist
+                            printf("[Lodi Client]: Active users:\n");
+                            for (int j; j < 20; j++) {
+                                if (strcmp(Names[j].name, "") != 0) {
+                                    printf("|%u| (%s %s)\n", j, Names[j].name, Pass[j].name);
+                                }
+                            }
+
+                            char reqFN[16];
+                            char reqLN[16];
+                            //prompt a user to follow a user
+                            printf("Enter the first name of who you would like to follow:\n");
+                            scanf("%15s", reqFN);
+                            printf("Enter the last name of who you would like to follow:\n");
+                            scanf("%15s", reqLN);
+
+                            //check list of names
+                            printf("[Lodi Client]: checking users for that name:\n");
+                            for (int j; j < 20; j++) {
+                                if (strcmp(Names[j].name, reqFN) && strcmp(Pass[j].name, reqLN) == 0) {
+                                    clientMessage.IdolID = j;
+                                }
+                            }
+                            clientMessage.UserID = i; */
+
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                         }

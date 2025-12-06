@@ -117,7 +117,6 @@ typedef struct {
     IdolPosts Posts[10];
     unsigned int postIndex;
     unsigned int followList[20];
-    unsigned int followIndex[20];
 } Account;
 
 
@@ -148,15 +147,17 @@ int main(int argc, char *argv[]) {
     // Tracker for posts
     Account Idols[20];
     memset(&Idols, 0, sizeof(Idols));
-    printf("PIndex:%u, FIndex:%u",Idols[0].postIndex,Idols[0].followIndex);
+    printf("PIndex:%u, FIndex:%u",Idols[0].postIndex,Idols[0].followList[19]);
 
     // Prepoulate follow list and posts
     Idols[0].followList[18] = 1;
     Idols[0].followList[19] = 1;
     Idols[1].followList[19] = 1;
-    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "bye now");
-    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "wordly");
-    strcpy(Idols[19].Posts[Idols[19].postIndex++].message, "Sick man!");
+    printf("PIndex:%u, FIndex:%u",Idols[0].postIndex,Idols[0].followList[19]);
+    strcpy(Idols[18].Posts[Idols[17].postIndex++].message, "We don't own the planet Earth, we belong to it.");
+    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "Will you be my neighbor?");
+    strcpy(Idols[19].Posts[Idols[19].postIndex++].message, "We don't make mistakes, just happy accidents.");
+    strcpy(Idols[19].Posts[Idols[19].postIndex++].message, "Talent is a pursued interest. Anything you're willing to practice, you can do.");
 
     printf("[Lodi Server]: Module Loaded. \n");
 
@@ -377,6 +378,12 @@ int main(int argc, char *argv[]) {
                     {
                         break;
                     }
+
+                    // Make setting ID/Index Easy
+                    int ID = clientMessage.IdolID;
+                    printf("Poster ID: %u\n", ID);
+                    int Index = Idols[ID].postIndex;
+
                     // filter by message_Type
                     switch (clientMessage.request_Type)
                     {
@@ -388,10 +395,7 @@ int main(int argc, char *argv[]) {
                     case 1: // post ack
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
-
-                        // Make setting ID/Index Easy
-                        int ID = serverMessage.IdolID;
-                        int Index = Idols[ID].postIndex;
+                        
                         strcpy(Idols[ID].Posts[Index].message, clientMessage.message);
                         printf("[Lodi Server]: %s\n",Idols[ID].Posts[Index].message,clientMessage.message);
 
@@ -401,14 +405,15 @@ int main(int argc, char *argv[]) {
                         memset(&serverMessage, 0, sizeof(serverMessage));
                         serverMessage.message_Type = clientMessage.request_Type;
 
-                        for(int p; p < postIndex; p++){ //loop all posts
-                            for(int fl; fl < 20; fl++){ //check follow list
-                                if(followList[clientMessage.UserID][fl] = Posts[p].IdolID){
-                                    strcpy(serverMessage.message, Posts[p].message);
+                        for(int i; i < 20; i++){ // loop through follow list
+                            if(Idols[ID].followList[i] == 1){ // Check followlist of requester
+                                for(int p = 0; p < Idols[i].postIndex; p++){ // loop through all posts that are in the follow list
                                     memset(&serverMessage, 0, sizeof(serverMessage));
-                                    serverMessage.IdolID = Posts[p].IdolID;
+                                    strcpy(serverMessage.message, Idols[i].Posts[p].message);
+                                    serverMessage.IdolID = i;
+                                    printf("ID: %u\n",serverMessage.IdolID);
+                                    printf("msg: %s",serverMessage.message);
                                     send(clientSock, &serverMessage, sizeof(serverMessage), 0);
-                                    fl = fl + 20;
                                 }
                             }
                         }
