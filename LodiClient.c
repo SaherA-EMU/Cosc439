@@ -115,6 +115,14 @@ int main(int argc, char *argv[])
     LodiServerMessage serverMessage;
     char *message_text;
 
+    // prepopulate user names
+    strcpy(Names[17].name, "Steve");
+    strcpy(Pass[17].name, "Irwin");
+    strcpy(Names[18].name, "Fred");
+    strcpy(Pass[18].name, "Rogers");
+    strcpy(Names[19].name, "Bob");
+    strcpy(Pass[19].name, "Ross");
+
     printf("[Lodi Client]: Module Loaded. \n");
 
     // easy port shift
