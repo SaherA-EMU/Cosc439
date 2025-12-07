@@ -236,7 +236,7 @@ int main(int argc, char *argv[]) {
                     return 1;
                 }
                 else{
-                    printf("[TFA SERVER] Sent push to client.");
+                    printf("[TFA Server] Sent push to client.\n");
                 }
             
             if(recvfrom(serverSock, &responseAuth, sizeof(responseAuth), 0, (struct sockaddr*)&clientAddr, &clientLen) <= 0){

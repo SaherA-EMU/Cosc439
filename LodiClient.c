@@ -7,7 +7,6 @@
 #include <time.h>       // for timestamp/digitalSig -> time(&var)
 #include <stdbool.h>    // adds boolean operator
 
-// NOTE: this doesnt handle powers of y below 8, which is a bit of an oversight. Too late to fix directly so keys adjusted.
 // privateKey to encrypt on login
 long privateKeys[20] = {13, 17, 19, 23, 25, 29, 31, 35, 37, 41, 43, 47, 49, 59, 67, 71, 73, 79, 85, 89};
 // send the associated public key when registering the key with the PKEServer.
@@ -280,9 +279,10 @@ int main(int argc, char *argv[])
                         printf("[Lodi Client]: User denied verification.\nLogin for user %u denied", i);
                     }
 
-                    int loggedInUserID = i; //just saving the user id for later use 
+                    int loggedInUserID = i; // just saving the user id for later use 
                     i = 20;
-                    // todo: implement TCP HERE
+                    
+                    // set up TCP socket
                     TCPSock = socket(AF_INET, SOCK_STREAM, 0);
                     TCPServer.sin_family = AF_INET;
                     TCPServer.sin_addr.s_addr = INADDR_ANY;
@@ -295,16 +295,15 @@ int main(int argc, char *argv[])
 
                     // login ack
                     printf("----------------------------------\n");
-                        // just asking for Ack Login,really - automated login
-                        memset(&clientMessage, 0, sizeof(clientMessage));
-                        clientMessage.UserID = loggedInUserID;
-                        clientMessage.request_Type = 0;
-                        send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                        recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
-                        printf("[Lodi Client]: %s\n", serverMessage.message);
-
-                        printf("[Lodi Client]: Connected to server\n");
+                    // just asking for Ack Login,really - automated login
+                    memset(&clientMessage, 0, sizeof(clientMessage));
+                    clientMessage.UserID = loggedInUserID;
+                    clientMessage.request_Type = 0;
+                    send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
+                    recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
+                    printf("[Lodi Client]: %s\n", serverMessage.message);
                     
+                    printf("[Lodi Client]: Connected to server\n");
 
                     while (1)
                     {
@@ -319,13 +318,13 @@ int main(int argc, char *argv[])
                             memset(&clientMessage, 0, sizeof(clientMessage));
                             clientMessage.request_Type = 1;
                             clientMessage.UserID = loggedInUserID;
-                            
+
                             printf("[Lodi Client]: Please enter a message to post: \n");
                             //Enter Eats the first fgets
                             fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
                             fgets(clientMessage.message, sizeof(clientMessage.message), stdin);
 
-                            clientMessage.message[strcspn(clientMessage.message, "\n")] = 0; //remove newline char
+                            clientMessage.message[strcspn(clientMessage.message, "\n")] = 0; // remove newline char
 
                             //send request, receive ack
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
@@ -341,22 +340,31 @@ int main(int argc, char *argv[])
 
                             //send request, receive all posts for followed users.
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
-                            while(1){
+                            while (1)
+                            {
                                 recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                                 if(serverMessage.IdolID == 20){
                                     printf("[Lodi Client]: %s\n", serverMessage.message);
                                     break;
                                 }
-                                printf("[Lodi Client]: (%s) :-: %s\n", Names[serverMessage.IdolID].name, serverMessage.message);
+                                printf("[Lodi Client]: (%s %s) :-: %s\n", Names[serverMessage.IdolID].name, Pass[serverMessage.IdolID].name, serverMessage.message);
                             }
                             serverMessage.IdolID = 0;
                         }
                         else if (user_Input == 3)
                         {
-                            int idolIDToFollow;
-                            printf("[Lodi Client]: Please enter the Idol ID to follow (0-19): \n");
-                            scanf("%d", &idolIDToFollow);
                             
+                            int j = 0;
+                            printf("[Lodi Client]: Active users:\n");
+                            for (j; j < 20; j++) {
+                                if (strcmp(Names[j].name, "") != 0) {
+                                    printf("|ID: %u| (%s %s)\n", j, Names[j].name, Pass[j].name);
+                                }
+                            }
+
+                            int idolIDToFollow;
+                            printf("[Lodi Client]: Please enter the Idol ID to follow: \n");
+                            scanf("%d", &idolIDToFollow);
 
                             // todo follow(idol) implementation
                             memset(&clientMessage, 0, sizeof(clientMessage));
@@ -367,12 +375,19 @@ int main(int argc, char *argv[])
                             send(TCPSock, &clientMessage, sizeof(clientMessage), 0);
                             recv(TCPSock, &serverMessage, sizeof(serverMessage), 0);
                             printf("[Lodi Client]: %s\n", serverMessage.message);
-
                         }
                         else if (user_Input == 4)
                         {
+                            int j = 0;
+                            printf("[Lodi Client]: Active users:\n");
+                            for (j; j < 20; j++) {
+                                if (strcmp(Names[j].name, "") != 0) {
+                                    printf("|ID: %u| (%s %s)\n", j, Names[j].name, Pass[j].name);
+                                }
+                            }
+
                             int idolIDToUnfollow;
-                            printf("[Lodi Client]: Please enter the Idol ID to unfollow (0-19): \n");
+                            printf("[Lodi Client]: Please enter the Idol ID to unfollow: \n");
                             scanf("%d", &idolIDToUnfollow);
 
                             memset(&clientMessage, 0, sizeof(clientMessage));

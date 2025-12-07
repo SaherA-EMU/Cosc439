@@ -5,18 +5,6 @@
 #include <string.h>     // for memset()
 #include <arpa/inet.h>  // for inet_addr() and htons()
 
-// privateKey to encrypt on login
-// long privateKeys[20] = {  5,   7, 13,  17,  19, 23,  25,  29,  31, 35,  37,  41, 43,  47, 49,  59, 67,  71,  73,  79};
-// send the associated public key when registering the key with the PKEServer.
-// long publicKeys[20] =  { 53, 151, 61, 233, 139, 23, 169, 173, 247, 83, 157, 161, 43, 191, 97, 179, 67, 119, 217, 127};
-
-typedef struct
-{
-    char name[16];
-} NameList;
-
-NameList Names[20];
-
 typedef struct
 {
     enum
@@ -55,11 +43,6 @@ typedef struct
     unsigned long timestamp;
     unsigned long digitalSig;
 } PKServerToPClientOrLodiClient;
-
-/*typedef struct {
-    enum {responseAuth} messageType;
-    unsigned int userID;
-} TFAServerToLodiServer; */
 
 typedef struct
 {
@@ -117,7 +100,6 @@ typedef struct {
     IdolPosts Posts[10];
     unsigned int postIndex;
     unsigned int followList[20];
-    unsigned int followIndex[20];
 } Account;
 
 
@@ -148,15 +130,15 @@ int main(int argc, char *argv[]) {
     // Tracker for posts
     Account Idols[20];
     memset(&Idols, 0, sizeof(Idols));
-    printf("PIndex:%u, FIndex:%u",Idols[0].postIndex,Idols[0].followIndex);
 
     // Prepoulate follow list and posts
     Idols[0].followList[18] = 1;
     Idols[0].followList[19] = 1;
     Idols[1].followList[19] = 1;
-    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "bye now");
-    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "wordly");
-    strcpy(Idols[19].Posts[Idols[19].postIndex++].message, "Sick man!");
+    strcpy(Idols[17].Posts[Idols[17].postIndex++].message, "We don't own the planet Earth, we belong to it.");
+    strcpy(Idols[18].Posts[Idols[18].postIndex++].message, "Will you be my neighbor?");
+    strcpy(Idols[19].Posts[Idols[19].postIndex++].message, "We don't make mistakes, just happy accidents.");
+    strcpy(Idols[19].Posts[Idols[19].postIndex++].message, "Talent is a pursued interest. Anything you're willing to practice, you can do.");
 
     printf("[Lodi Server]: Module Loaded. \n");
 
@@ -349,7 +331,6 @@ int main(int argc, char *argv[]) {
                 TCPServer.sin_addr.s_addr = INADDR_ANY;
                 TCPServer.sin_port = htons(7040 + n);
                 TCPSock = socket(AF_INET, SOCK_STREAM, 0);
-                // socklen_t TCPServerAddress = sizeof(TCPServer);
                 memset(&TCPClient, 0, sizeof(TCPClient));
                 socklen_t TCPClientLen = sizeof(TCPClient);
 
@@ -377,6 +358,7 @@ int main(int argc, char *argv[]) {
                     {
                         break;
                     }
+
                     // filter by message_Type
                     switch (clientMessage.request_Type)
                     {
@@ -444,6 +426,7 @@ int main(int argc, char *argv[]) {
                 } // end of innerTCPwhile loop
                 close(clientSock);
                 continue;
+
                 // Case: ID does not currently have TFA set up.
                 if (authReq.userID == -1)
                 {
